@@ -220,30 +220,6 @@ int Graph :: CountG3s()
 	return 0;
 }
 
-ePair Graph :: lStepRandomWalk(Count numSteps, VertexIdx startNode)
-{
-	vector<VertexIdx> rWalk;
-	rWalk.push_back(startNode);
-	VertexIdx currentNode = startNode;
-	VertexIdx nextNode = startNode;
-
-	cout << "Random Walk: " << startNode << "\t";
-	ePair lastEdge;
-
-	for(int i = 0; i < numSteps; i++)
-	{
-		Count numNbs = adjList[currentNode].size();
-		int randNbr = rand() % numNbs;
-		nextNode = adjList[currentNode][randNbr];
-		rWalk.push_back(nextNode);
-		lastEdge = make_pair(currentNode, nextNode);
-		currentNode = nextNode;
-		cout << nextNode << "\t";
-	}
-	cout << "\n";
-	return lastEdge;
-}
-
 
 int sampleFromBinomial(int wt, double p)
 {
