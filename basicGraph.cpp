@@ -1,4 +1,5 @@
-#include "include/Graph.h"
+#include "Graph.h"
+#include <sstream>
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -16,18 +17,28 @@ class Graph
         vector <vector<Weight>> adjMatrix;				//adj Matrix
         vector <vector<Weight>> scaledAdjMatrix;		//scaled adj Matrix
         vector <vector<Weight>> sparsedAdjMatrix;		//sparsed adj Matrix
+
+        
         vector <vector<VertexIdx>> edgeList;
         unordered_map <VertexIdx, Count> nodeDeg;
+
+        vector <Count> du;
+        vector <vector<Count>> InNbrs;					//List of InNbrs
+        vector <priority_queue<Count> > OutNbrs;
 
         /* Count Lists... */
         // vector<int> g3s(3);
         // vector <Count> g3s = vector<Count>(3);
 
+        Count maxLabel;
+
     public:
 
-    	Graph(vector <VertexIdx> &v, vector<ePair> &edList);		//takes in list/vector of nodes and vector of pairs which are edges (undirected)
+		// Graph(int nv, int ne);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
 
-		Graph(int nv, int ne);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
+		Graph(int nv);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
+
+    	Graph(vector <VertexIdx> &v, vector<ePair> &edList);		//takes in list/vector of nodes and vector of pairs which are edges (undirected)
 
     	int printGraphDetails();
 
@@ -41,66 +52,49 @@ class Graph
 
         // //For debugging.  Not for serialization.
         // void print(FILE *f = stdout) const;
+
+		// int initializeDu(Count n);
+
+
+		int addDirectedEdge(ePair);
+		int removeDirectedEdge(ePair);
+		int flipDirectedEdge(ePair);
+
+		int incrementDu(VertexIdx);
+		int decrementDu(VertexIdx);
+
+		VertexIdx getTightInNbr(VertexIdx);
+		VertexIdx getTightOutNbr(VertexIdx);
+
+		Count getLabel(VertexIdx);
+		Count getMaxLabel();
+
 };
 
-
-Count Graph :: getNumVertices()
+// Constructor to initialize the graph...
+// Graph :: Graph(int nv, int ne)
+Graph :: Graph(int nv)
 {
-	return nVertices;
-}
+	nVertices = nv;
+	OutNbrs.resize(nv);
+	du.resize(nv);
 
-Count Graph :: getNumEdges()
-{
-	return nEdges;
-}
-
-int Graph :: printGraphDetails()
-{
-	std::cout << "num of nodes = " << nVertices << " num of edges = " << nEdges << "\n";
-
-	unordered_map<VertexIdx, Count>::iterator nIt;
-	for(nIt = nodeDeg.begin(); nIt != nodeDeg.end(); nIt++)
+	// initialize adj matrix to 0...
+	// each entry would be positive > 0 if an edge has some positive weight...
+	for(Count i = 0; i < nv; i++)
 	{
-		std::cout << nIt->first << " : " << nIt->second << "\n";
+		du[i] = 0;
+		vector <Weight> eachRow;
+		for(Count j = 0; j < nv; j++)
+		{
+			eachRow.push_back(0);
+		}
+		adjMatrix.push_back(eachRow);
+		scaledAdjMatrix.push_back(eachRow);
+		sparsedAdjMatrix.push_back(eachRow);
+		InNbrs.push_back(eachRow);
 	}
-
-	
-	// Print graph  //
-	for (int i = 0; i < nVertices; i++)
-	{
-		// print current vertex number
-		cout << i << " --> ";
-
-		// print all neighboring vertices of vertex i
-		for (int v : adjList[i])
-			cout << v << " ";
-		cout << endl;
-	}
-	// 
-	return 0;
 }
-
-
-int Graph :: checkEdgeExistence(e)
-{
-	// check in the adjacency list... if the pair exists....
-	return flag;
-}
-
-// // print adjacency list representation of graph
-// void printGraph(Graph const& graph, int N)
-// {
-// 	for (int i = 0; i < N; i++)
-// 	{
-// 		// print current vertex number
-// 		cout << i << " --> ";
-
-// 		// print all neighboring vertices of vertex i
-// 		for (int v : graph.adjList[i])
-// 			cout << v << " ";
-// 		cout << endl;
-// 	}
-// }
 
 
 Graph :: Graph(vector <VertexIdx> &v, vector<ePair> &e)
@@ -145,80 +139,65 @@ Graph :: Graph(vector <VertexIdx> &v, vector<ePair> &e)
 	}
 }
 
-Graph :: Graph(int nv, int ne)
-{
-	nVertices = nv;
 
-	// initialize adj matrix to 0...
-	// each entry would be positive > 0 if an edge has some positive weight...
-	for(Count i = 0; i < nv, i++)
-	{
-		vector <Weight> eachRow;
-		for(Count j = 0; j < nv, j++)
-		{
-			eachRow.push_back(0);
-		}
-		adjMatrix.push_back(eachRow);
-		scaledAdjMatrix.push_back(eachRow);
-		sparsedAdjMatrix.push_back(eachRow);
-	}
+Count Graph :: getNumVertices()
+{
+	return nVertices;
 }
 
-
-int Graph :: CountG3s()
+Count Graph :: getNumEdges()
 {
-	vector <VertexIdx> :: iterator neighborIt;
-	vector <VertexIdx> neighbors;
+	return nEdges;
+}
 
-	unordered_map<long long, Count> tri_e;
+int Graph :: printGraphDetails()
+{
+	std::cout << "num of nodes = " << nVertices << " num of edges = " << nEdges << "\n";
 
-	for(int e = 0; e < nEdges; e++)
+	unordered_map<VertexIdx, Count>::iterator nIt;
+	for(nIt = nodeDeg.begin(); nIt != nodeDeg.end(); nIt++)
 	{
-		Count star_u = 0, star_v = 0;
-
-		unordered_map<VertexIdx, bool> X;
-
-		VertexIdx u = edgeList[e][0];
-		VertexIdx v = edgeList[e][1];
-
-		// Checking neighbors of u...
-		neighbors = adjList[u];
-		for(neighborIt = neighbors.begin(); neighborIt != neighbors.end(); neighborIt++)
-		{
-			VertexIdx w = *neighborIt;
-			if (w == v) continue;
-			star_u += 1;
-			X[w] = 1;
-		}
-
-		// Checking neighbors of v now..
-		neighbors = adjList[v];
-		for(neighborIt = neighbors.begin(); neighborIt != neighbors.end(); neighborIt++)
-		{
-			VertexIdx w = *neighborIt;
-			if (w == u) continue;
-
-			if (X[w] == 1)
-			{
-				tri_e[e] += 1;
-				star_u -= 1;
-			}
-			else
-			{
-				star_v += 1;
-			}
-		}
-
-		g3s[0] += tri_e[e];
-		g3s[1] += (star_u + star_v);
-		X.clear();
+		std::cout << nIt->first << " : " << nIt->second << "\n";
 	}
 
-	cout << g3s[0] << " " << g3s[1] << "\n"; 
+	
+	// Print graph  //
+	for (int i = 0; i < nVertices; i++)
+	{
+		// print current vertex number
+		cout << i << " --> ";
 
-
+		// print all neighboring vertices of vertex i
+		for (int v : adjList[i])
+			cout << v << " ";
+		cout << endl;
+	}
+	// 
 	return 0;
 }
+
+/*
+int Graph :: checkEdgeExistence(e)
+{
+	// check in the adjacency list... if the pair exists....
+	return flag;
+}
+*/
+
+
+
+
+
+/*
+int Graph :: initializeDu(Count numVertices)
+{
+	for(VertexIdx i = 0; i < numVertices; i++)
+	{
+		du[i] = 0;
+	}
+	return 0;
+}
+*/
 
 
 int sampleFromBinomial(int wt, double p)
@@ -230,15 +209,15 @@ int sampleFromBinomial(int wt, double p)
     // perform 4 trials, each succeeds 1 in 2 times
     // std::binomial_distribution<> d(4, 0.5);
 
-  	std::binomial_distribution<int> distribution (n, p);
+  	std::binomial_distribution<int> distribution (wt, p);
   	return distribution(gen);
 }
 
 
-int processEdge()
-{
+// int processEdge()
+// {
 
-}
+// }
 
 
 int main()
@@ -254,6 +233,7 @@ int main()
 	// after inserting each edge the graph is updated...
 
 	//read each line from file...
+	string graphFileName = "g1.txt";
 	ifstream graphFile;
 
 	string line;
@@ -261,7 +241,7 @@ int main()
 	
 	Count n, m;
 	VertexIdx e_src, e_dest;
-	Weight e_weight; Wmax;
+	Weight e_weight, Wmax;
 	int insDel;
 
 	double scalingProbParam_c, sparsifyProbParam_c, scalingEps, sparsifyEps;
@@ -270,16 +250,28 @@ int main()
 
 	double scalingProb, minWeightedDensity; 
 
-	graphFile.open(graphFileName);
+	cout << "Did I come here...\n";
 
+	graphFile.open(graphFileName, ifstream::in);
 	if(graphFile.is_open())
 	{
-		if (getline(graphFile, line) != -1)
+		// if (getline(graphFile, line) != -1)
+		if (getline(graphFile, line))
 		{
 			ss.clear();
 			ss.str("");
 			ss << line;
 			ss >> n >> m >> Wmax;
+
+			// for now, let us say that only the exact number of nodes is only known... 
+			// initialize the datastructure required for each node...
+			// d(u) 
+			// InNbrs -- List of in-nbrs for each node
+			// OutNbrs -- Max priority queue for each node u... indexed by d(v)
+
+			Graph G(n); 	// This initializes du, InNbrs, OutNbrs(list of priority queues...)
+			cout << "Done with initialization...\n";
+			/*
 
 			minWeightedDensity = (Wmax*1.0)/2;
 
@@ -306,6 +298,7 @@ int main()
 				}
 
 			}
+			*/
 		}
 		else
 		{
@@ -314,9 +307,14 @@ int main()
 		}
 		
 	}
+	else
+	{
+		cout << "Cannot open Graph file...\n";
+		exit(0);
+	}
 
 
-
+	/*
 	Graph G(v, e);
 
 	Count numVertices = G.getNumVertices();
@@ -324,8 +322,8 @@ int main()
 
 	G.printGraphDetails();
 
-	G.CountG3s();
-
+	// G.CountG3s();
+	*/
 
 	return 0;
 }
