@@ -12,7 +12,11 @@
 
 #include <vector>
 #include <unordered_map>
+#include <map>
+#include <set>
 #include <queue>
+#include <tuple>
+
 #include <sstream>
 // #include <utility>
 
@@ -24,7 +28,9 @@ namespace rwNameSpace {
     using EdgeIdx   = int64_t;
     using Count     = int64_t;
     using Weight 	= int64_t;
-    using ePair 	= std::pair<VertexIdx, VertexIdx>;
+    using ePair 	= pair<VertexIdx, VertexIdx>;
+    using eTupleWeighted	= tuple<VertexIdx, VertexIdx, Count>;
+    using eTupleUnWeighted	= tuple<VertexIdx, VertexIdx>;
     const EdgeIdx invalidEdge = -1;
 }
 
