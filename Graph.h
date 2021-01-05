@@ -29,9 +29,10 @@ namespace rwNameSpace {
     using Count     = int64_t;
     using Weight 	= int64_t;
     using ePair 	= pair<VertexIdx, VertexIdx>;
-    using eTupleWeighted	= tuple<VertexIdx, VertexIdx, Count>;
     using eTupleUnWeighted	= tuple<VertexIdx, VertexIdx>;
+    using eTupleWeighted	= tuple<VertexIdx, VertexIdx, Count>;
     const EdgeIdx invalidEdge = -1;
+    using hyperEdge	= vector<VertexIdx>;	
 }
 
 #endif

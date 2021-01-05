@@ -34,9 +34,9 @@ class Graph
         // map to the elements in the neighbors list for each node...
         vector<map<VertexIdx, list<VertexIdx>::iterator>> mapToNeighborsList;
         // vector of iterators -- one for each node... that keeps track of which element to access next in visitNext
-        vector<list<VertexIdx>::iterator>> nextPositionIteratorInc;
-        vector<list<VertexIdx>::iterator>> nextPositionIteratorDec;
-        vector<list<VertexIdx>::iterator>> nextPositionIteratorTightInNbr;
+        vector<list<VertexIdx>::iterator> nextPositionIteratorInc;
+        vector<list<VertexIdx>::iterator> nextPositionIteratorDec;
+        vector<list<VertexIdx>::iterator> nextPositionIteratorTightInNbr;
         // *************************************************************
 
         // ********* TO MAINTAIN A UPDATING PRIORITY QUEUE OF OUTNEIGHBORS *************** 
@@ -83,6 +83,7 @@ class Graph
 		int flipDirectedEdge(eTupleUnWeighted);
 		int addToPriorityQueue(VertexIdx, VertexIdx, Count);
 		int removeFromPriorityQueue(VertexIdx, VertexIdx);
+		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec);
 
 		int incrementDu(VertexIdx);
 		int decrementDu(VertexIdx);
@@ -92,9 +93,17 @@ class Graph
 
 		Count getLabel(VertexIdx);
 		Count getMaxLabel();
+		int updateLabels(VertexIdx u, Count changeVal);
+		VertexIdx getMaxOutNbr(VertexIdx u);
 
 		int insertEdge(eTupleUnWeighted);
-		VertexIdx deleteEdge(eTupleUnWeighted);
+		int deleteEdge(eTupleUnWeighted);
+
+		int updateIncPointer(VertexIdx u, VertexIdx v);
+		int updateDecPointer(VertexIdx u, VertexIdx v);
+		int updateTightInNbrIterator(VertexIdx u, VertexIdx v);
+		int addToInNbrs(VertexIdx u, VertexIdx v);
+		int removeFromInNbrs(VertexIdx u, VertexIdx v);
 };
 
 // Constructor to initialize the graph...
@@ -153,12 +162,13 @@ Graph :: Graph(vector <VertexIdx> &v, vector<eTupleUnWeighted> &e)
 
 	adjList.resize(nVertices);
 
-	// vector<eTupleUnWeighted>::iterator edgeIt;
+	vector<eTupleUnWeighted>::iterator edgeIt;
 
-	for(const eTupleUnWeighted &edgeIt : e)
+	// for(const eTupleUnWeighted &edgeIt : e)
+	for(edgeIt = e.begin(); edgeIt != e.end(); edgeIt++)
 	{
-		VertexIdx src = edgeIt.first;
-		VertexIdx dest = edgeIt.second;
+		VertexIdx src = get<0>(*edgeIt);
+		VertexIdx dest = get<1>(*edgeIt);
 
 		// populate adjacency list
 		adjList[src].push_back(dest);
@@ -280,6 +290,15 @@ int Graph :: insertEdge(eTupleUnWeighted e)
 		w = v;
 	}
 
+	wPrime = getTightInNbr(w);
+	while(wPrime != -1)
+	{
+		eTupleUnWeighted eFlip(wPrime, w);
+		flipDirectedEdge(eFlip);
+		w = wPrime;
+		wPrime = getTightInNbr(w);
+	}
+
 	incrementDu(w);
 	return 0;
 }
@@ -306,13 +325,13 @@ int Graph :: deleteEdge(eTupleUnWeighted e)
 		w = u;
 	}
 
-	
-	while(getTightOutNbr(w) != NullVertexIdx)
+	wPrime = getTightOutNbr(w);
+	while(wPrime != NullVertexIdx)
 	{
-		wPrime = getTightOutNbr(w);
 		eTupleUnWeighted eFlip(w, wPrime);
 		flipDirectedEdge(eFlip);
-		wPrime = w;
+		w = wPrime;
+		wPrime = getTightOutNbr(w);
 	}
 
 	decrementDu(w);
@@ -323,11 +342,11 @@ int Graph :: deleteEdge(eTupleUnWeighted e)
 
 int Graph :: updateIncPointer(VertexIdx u, VertexIdx v)
 {
-	list<VertexIdx> :: iterator updateItInc;
+	list<VertexIdx>:: iterator updateItInc;
 
 	updateItInc = nextPositionIteratorInc[u];
 	updateItInc++;
-	if(updateInc == listOfNeighbors[u].end())
+	if(updateItInc == listOfNeighbors[u].end())
 	{
 		updateItInc = listOfNeighbors[u].begin();
 	}
@@ -338,7 +357,7 @@ int Graph :: updateIncPointer(VertexIdx u, VertexIdx v)
 
 int Graph :: updateDecPointer(VertexIdx u, VertexIdx v)
 {
-	list<VertexIdx> :: iterator updateItDec;
+	list<VertexIdx>:: iterator updateItDec;
 
 	updateItDec = nextPositionIteratorDec[u];
 	updateItDec++;
@@ -354,7 +373,7 @@ int Graph :: updateDecPointer(VertexIdx u, VertexIdx v)
 
 int Graph :: updateTightInNbrIterator(VertexIdx u, VertexIdx v)
 {
-	list<VertexIdx> :: iterator updateItNext;
+	list<VertexIdx>:: iterator updateItNext;
 
 	updateItNext = nextPositionIteratorTightInNbr[u];
 	updateItNext++;
@@ -411,12 +430,12 @@ int Graph :: removeFromInNbrs(VertexIdx u, VertexIdx v)
 			updateDecPointer(u, v);
 		}
 
-		if(nextPositionIteratorTightInNbr == mapToNeighborsList[u][v])
+		if(nextPositionIteratorTightInNbr[u] == mapToNeighborsList[u][v])
 		{
 			updateTightInNbrIterator(u, v);
 		}
 
-		listOfNeighbors.erase(mapToNeighborsList[u][v]);		// removing v from the in-neighbors of u....
+		listOfNeighbors[u].erase(mapToNeighborsList[u][v]);		// removing v from the in-neighbors of u....
 		mapToNeighborsList[u].erase(v);							// remove element from the map as well
 	}
 
@@ -488,20 +507,20 @@ int Graph :: flipDirectedEdge(eTupleUnWeighted e)
 int Graph :: updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec)
 {
 	list<VertexIdx> :: iterator updateItInc;
-	unordered_map<VertexIdx> touchedNeighbors;
+	unordered_map<VertexIdx, int> touchedNeighbors;
 
 	Count start = 0;
-	Count maxNumNeighborsToUpdate = (Count) (4 * nodeInDeg) / eta;
+	Count maxNumNeighborsToUpdate = (Count) (4 * nodeInDeg[u]) / eta;
 	// note that you shouldnt be updating an element multiple times within a same 
 	// update... so keep track of the updated neighbors... 
 	// every time start with a new/empty list of neighbors that would be updated...
 	if(incOrDec == 1)
 	{
-		updateItInc = nextPositionIteratorInc;
+		updateItInc = nextPositionIteratorInc[u];
 	}
 	else if (incOrDec == -1)
 	{
-		updateItInc = nextPositionIteratorDec;
+		updateItInc = nextPositionIteratorDec[u];
 	}
 
 	while(start < maxNumNeighborsToUpdate)
@@ -538,11 +557,11 @@ int Graph :: updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec)
 	// update the position of the nextPosition Iterator... 
 	if(incOrDec == 1)
 	{
-		nextPositionIteratorInc = updateItInc;
+		nextPositionIteratorInc[u] = updateItInc;
 	}
 	else
 	{
-		nextPositionIteratorDec = updateItInc;
+		nextPositionIteratorDec[u] = updateItInc;
 	}
 
 	return 0;
@@ -590,14 +609,14 @@ VertexIdx Graph :: getTightInNbr(VertexIdx u)
 	list<VertexIdx> :: iterator updateItInc;
 
 	Count start = 0;
-	Count maxNumNeighborsToCheck = (Count) (4 * nodeInDeg) / eta;
+	Count maxNumNeighborsToCheck = (Count)(4 * nodeInDeg[u]) / eta;
 	
-	unordered_map<VertexIdx> touchedNeighbors;
+	unordered_map<VertexIdx, int> touchedNeighbors;
 	// note that you shouldnt be updating an element multiple times within a same 
 	// update... so keep track of the updated neighbors... 
 	// every time start with a new/empty list of neighbors that would be updated...
 	
-	updateItInc = nextPositionIteratorTightInNbr;
+	updateItInc = nextPositionIteratorTightInNbr[u];
 
 	while(start < maxNumNeighborsToCheck)
 	{
@@ -636,7 +655,7 @@ VertexIdx Graph :: getTightInNbr(VertexIdx u)
 	}
 
 	// update the position of the nextPosition Iterator... 
-	nextPositionIteratorTightInNbr = updateItInc;
+	nextPositionIteratorTightInNbr[u] = updateItInc;
 
 	return neighborToReturn;
 
