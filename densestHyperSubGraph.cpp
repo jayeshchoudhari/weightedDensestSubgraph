@@ -20,6 +20,8 @@ class Graph
         vector <vector<Weight>> scaledAdjMatrix;		//scaled adj Matrix
         vector <vector<Weight>> sparsedAdjMatrix;		//sparsed adj Matrix
 
+        unordered_map<vector<VertexIdx>, Count> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+
         vector <vector<VertexIdx>> edgeList;
         unordered_map <VertexIdx, Count> nodeInDeg;
 
@@ -283,21 +285,7 @@ int Graph :: insertEdge(edgeVector e)
 
 	w = minDegVertex;
 
-	/*
-	if(nodeInDeg[u] >= nodeInDeg[v])
-	{
-		eTupleUnWeighted eAdd(u,v);
-		addDirectedEdge(eAdd);
-		w = v;
-	}
-	else
-	{
-		eTupleUnWeighted eAdd(v,u);
-		addDirectedEdge(eAdd);
-		w = u;
-	}
-	*/
-
+	// check if this results into making some neighboring edge of w tight... 
 	wPrime = getTightInNbr(w);
 	while(wPrime != -1)
 	{
@@ -308,7 +296,7 @@ int Graph :: insertEdge(edgeVector e)
 	}
 
 	incrementDu(w);
-	
+
 	incrementDu(w);
 	return 0;
 }
@@ -790,6 +778,8 @@ int main()
 			// scalingProb = (c log n) / (eps^2 * rho_min)  
 			scalingProb = (scalingProbParam_c * log2(n)) / (scalingEpsSquared * minWeightedDensity);
 
+			Count edgeId = 0;
+
 			while(getline(graphFile, line))
 			{
 				ss.clear();
@@ -810,6 +800,36 @@ int main()
 				tempVec.pop_back();
 
 				edgeVector currentEdge = tempVec;
+
+				if(insDel == "+")
+				{
+					if(edgeMap.find(currentEdge) == edgeMap.end())
+					{
+						edgeMap[currentEdge] = edgeId;
+
+						cout << "Add the edge -- " << edgeId << endl;
+						insertEdge(currentEdge, edgeId);
+
+						edgeId += 1;
+					}
+					else
+					{
+						cout << "Edge already exists in the graph...\n";
+					}
+				}
+				else if(insDel == "-")
+				{
+					if(edgeMap.find(currentEdge) == edgeMap.end())
+					{
+						cout << "Deleting edge " << edgeMap[currentEdge] << endl;
+					}
+					else
+					{
+						cout << "Edge does not exists to delete...\n";
+					}
+				}
+				
+
 
 
 
