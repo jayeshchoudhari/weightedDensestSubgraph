@@ -10,6 +10,7 @@ class Graph
         Count nVertices; 								//number of vertices in the graph
         Count nEdges;     								//number of edges in this list
         VertexIdx NullVertexIdx = -1;
+        EdgeIdx NullEdgeIdx = -1;
 
         vector <VertexIdx> srcs;      					//array of source vertices
         vector <VertexIdx> dsts;      					//array of destination vertices
@@ -21,30 +22,36 @@ class Graph
         vector <vector<Weight>> sparsedAdjMatrix;		//sparsed adj Matrix
 
         unordered_map<vector<VertexIdx>, Count> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        unordered_map<Count, VertexIdx> headOfEdgeId;
 
         vector <vector<VertexIdx>> edgeList;
         unordered_map <VertexIdx, Count> nodeInDeg;
 
         vector <Count> du;
-        vector <vector<Count>> InNbrs;					//List of InNbrs
+        // vector <vector<Count>> InNbrs;					//List of InNbrs
+        vector <set<EdgeIdx>> InNbrs;					//List of InNbrs
         vector <priority_queue<Count> > OutNbrs;
         vector <Count> nextNeighbor;
 
         // ****** FOR MAINTAINING THE VISITNEXT DATA-STRUCTURE ********
         // list of neighbors for each node...
-        vector<list<VertexIdx>> listOfNeighbors;
+        // vector<list<VertexIdx>> listOfNeighbors;
+        vector<list<EdgeIdx>> listOfNeighbors;
         // map to the elements in the neighbors list for each node...
-        vector<map<VertexIdx, list<VertexIdx>::iterator>> mapToNeighborsList;
+        vector<map<EdgeIdx, list<VertexIdx>::iterator>> mapToNeighborsList;
         // vector of iterators -- one for each node... that keeps track of which element to access next in visitNext
-        vector<list<VertexIdx>::iterator> nextPositionIteratorInc;
-        vector<list<VertexIdx>::iterator> nextPositionIteratorDec;
-        vector<list<VertexIdx>::iterator> nextPositionIteratorTightInNbr;
+        vector<list<EdgeIdx>::iterator> nextPositionIteratorInc;
+        vector<list<EdgeIdx>::iterator> nextPositionIteratorDec;
+        vector<list<EdgeIdx>::iterator> nextPositionIteratorTightInNbr;
         // *************************************************************
 
         // ********* TO MAINTAIN A UPDATING PRIORITY QUEUE OF OUTNEIGHBORS *************** 
         // this is to be done for each node.. and thus a vector here...
-        vector <map<Count, set<VertexIdx>> > outdegToNodeMap;
-        vector <map<VertexIdx, Count>> nodeToOutdegMap;
+        // Each element of a vector is a map --  where the map is with a key Count, and value is a set of 
+        // of edgeIds, which have the headVertices with value (indegree) as Count...
+        // and nodeToOutdegMap is a reverseMap of the same...
+        vector <map<Count, set<EdgeIdx>> > outdegToNodeMap;
+        vector <map<EdgeIdx, Count>> nodeToOutdegMap;
         // *************************************************************
 
 
@@ -81,17 +88,19 @@ class Graph
 
 		// int initializeDu(Count n);
 
-		int addDirectedEdge(eTupleUnWeighted);
-		int removeDirectedEdge(eTupleUnWeighted);
+		// int addDirectedEdge(eTupleUnWeighted);
+		int addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
+		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId);
 		int flipDirectedEdge(eTupleUnWeighted);
-		int addToPriorityQueue(VertexIdx, VertexIdx, Count);
-		int removeFromPriorityQueue(VertexIdx, VertexIdx);
+		// int addToPriorityQueue(VertexIdx, VertexIdx, Count);
+		int addToPriorityQueue(VertexIdx, EdgeIdx, Count);
+		int removeFromPriorityQueue(VertexIdx, EdgeIdx);
 		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec);
 
 		int incrementDu(VertexIdx);
 		int decrementDu(VertexIdx);
 
-		VertexIdx getTightInNbr(VertexIdx);
+		EdgeIdx getTightInNbr(VertexIdx);
 		VertexIdx getTightOutNbr(VertexIdx);
 
 		Count getLabel(VertexIdx);
@@ -99,12 +108,12 @@ class Graph
 		int updateLabels(VertexIdx u, Count changeVal);
 		VertexIdx getMaxOutNbr(VertexIdx u);
 
-		int insertEdge(eTupleUnWeighted);
-		int deleteEdge(eTupleUnWeighted);
+		int insertEdge(edgeVector, int);
+		int deleteEdge(edgeVector, int);
 
-		int updateIncPointer(VertexIdx u, VertexIdx v);
-		int updateDecPointer(VertexIdx u, VertexIdx v);
-		int updateTightInNbrIterator(VertexIdx u, VertexIdx v);
+		int updateIncPointer(VertexIdx u);
+		int updateDecPointer(VertexIdx u);
+		int updateTightInNbrIterator(VertexIdx u);
 		int addToInNbrs(VertexIdx u, VertexIdx v);
 		int removeFromInNbrs(VertexIdx u, VertexIdx v);
 };
@@ -140,7 +149,7 @@ Graph :: Graph(int nv)
 		adjMatrix.push_back(eachRow);
 		scaledAdjMatrix.push_back(eachRow);
 		sparsedAdjMatrix.push_back(eachRow);
-		InNbrs.push_back(eachRow);
+		// InNbrs.push_back(eachRow);
 		// nextNeighbor[i] = 0;
 	}
 }
@@ -189,6 +198,12 @@ Graph :: Graph(vector <VertexIdx> &v, vector<eTupleUnWeighted> &e)
 	}
 }
 
+
+int Graph :: addEdgeToEdgeList(edgeVector e)
+{
+	edgeList.push_back(e);
+	return 0;
+} 
 
 Count Graph :: getNumVertices()
 {
@@ -245,34 +260,33 @@ int Graph :: initializeDu(Count numVertices)
 }
 */
 
-int Graph :: addToPriorityQueue(VertexIdx u, VertexIdx v, Count vVal)
+int Graph :: addToPriorityQueue(VertexIdx u, EdgeIdx eId, Count vVal)
 {
 	// we need to add/update v in the priority queue of u;
-	Count oldVal = nodeToOutdegMap[u][v];
-	nodeToOutdegMap[u][v] = vVal;
+	// Count oldVal = nodeToOutdegMap[u][eId];
+	nodeToOutdegMap[u][eId] = vVal;
 
-	outdegToNodeMap[u][oldVal].erase(v);
-	outdegToNodeMap[u][vVal].insert(v);
+	// outdegToNodeMap[u][oldVal].erase(eId);
+	outdegToNodeMap[u][vVal].insert(eId);
 
 	return 0;
 }
 
 
-int Graph :: removeFromPriorityQueue(VertexIdx u, VertexIdx v)
+int Graph :: removeFromPriorityQueue(VertexIdx u, EdgeIdx eId)
 {
 	// remove/decrement v in the priority queue of u;
-	Count oldVal = nodeToOutdegMap[u][v];
-	Count newVal = oldVal - 1;
-	nodeToOutdegMap[u][v] = newVal;
-
-	outdegToNodeMap[u][oldVal].erase(v);
-	outdegToNodeMap[u][newVal].insert(v);
+	Count oldVal = nodeToOutdegMap[u][eId];			// gets the value of the degree of head node of eId...
+	// Count newVal = oldVal - 1;
+	nodeToOutdegMap[u].erase(eId);
+	outdegToNodeMap[u][oldVal].erase(eId);
+	// outdegToNodeMap[u][newVal].insert(eId);
 
 	return 0;
 }
 
 
-int Graph :: insertEdge(edgeVector e)
+int Graph :: insertEdge(edgeVector e, int eId)
 {
 	// e = u,v -- at this moment an edge isnt directed...
 	// hereafter it will be... from here onwards we would orient the edges...
@@ -280,17 +294,25 @@ int Graph :: insertEdge(edgeVector e)
 	// VertexIdx v = get<1>(e);
 
 	VertexIdx w, wPrime;
+	EdgeIdx ePrime;
+
 	edgeVector::iterator minIt = min_element(e.begin(), e.end());
 	VertexIdx minDegVertex = distance(e.begin(), minIt);
 
 	w = minDegVertex;
 
+	addDirectedEdgeToInOutNbrs(eId, w);
+
+	// headOfEdgeId[eId] = w;
+
 	// check if this results into making some neighboring edge of w tight... 
-	wPrime = getTightInNbr(w);
-	while(wPrime != -1)
+	ePrime = getTightInNbr(w);		// tight edge... -- head of this edge give tight neighbor node...
+	// while(wPrime != -1)
+	while(ePrime != -1)
 	{
-		eTupleUnWeighted eFlip(wPrime, w);
-		flipDirectedEdge(eFlip);
+		wPrime = headOfEdgeId[ePrime];
+		// eTupleUnWeighted eFlip(wPrime, w);
+		flipDirectedEdge(ePrime, w);
 		w = wPrime;
 		wPrime = getTightInNbr(w);
 	}
@@ -340,8 +362,9 @@ int Graph :: deleteEdge(eTupleUnWeighted e)
 }
 
 
-int Graph :: updateIncPointer(VertexIdx u, VertexIdx v)
+int Graph :: updateIncPointer(VertexIdx u)
 {
+	// shift the itertor to the next position...
 	list<VertexIdx>:: iterator updateItInc;
 
 	updateItInc = nextPositionIteratorInc[u];
@@ -355,8 +378,9 @@ int Graph :: updateIncPointer(VertexIdx u, VertexIdx v)
 	return 0;
 }
 
-int Graph :: updateDecPointer(VertexIdx u, VertexIdx v)
+int Graph :: updateDecPointer(VertexIdx u)
 {
+	// shift the itertor to the next position...
 	list<VertexIdx>:: iterator updateItDec;
 
 	updateItDec = nextPositionIteratorDec[u];
@@ -371,8 +395,9 @@ int Graph :: updateDecPointer(VertexIdx u, VertexIdx v)
 }
 
 
-int Graph :: updateTightInNbrIterator(VertexIdx u, VertexIdx v)
+int Graph :: updateTightInNbrIterator(VertexIdx u)
 {
+	// shift the itertor to the next position...
 	list<VertexIdx>:: iterator updateItNext;
 
 	updateItNext = nextPositionIteratorTightInNbr[u];
@@ -389,117 +414,154 @@ int Graph :: updateTightInNbrIterator(VertexIdx u, VertexIdx v)
 
 
 
-int Graph :: addToInNbrs(VertexIdx u, VertexIdx v)
+// int Graph :: addToInNbrs(VertexIdx u, VertexIdx v)
+int Graph :: addToInNbrs(VertexIdx headNode, EdgeIdx eId)
 {
 	// This is to add v to the in-neighbors of u...
 	// add to the list of in-neighbors and update the existence and 
 	// address of this new neigbor in the map...
-	listOfNeighbors[u].push_back(v);				// adding v to the in-neighbors of u...
-	list<VertexIdx>::iterator vsAddress = listOfNeighbors[u].end();
-	--vsAddress;									// going to the last element -- which is the new one inserted...
-	mapToNeighborsList[u][v] = vsAddress;
+	listOfNeighbors[headNode].push_back(eId);				// adding v to the in-neighbors of u...
+	list<EdgeIdx>::iterator esAddress = listOfNeighbors[headNode].end();
+	--esAddress;									// going to the last element -- which is the new one inserted...
+	mapToNeighborsList[headNode][eId] = esAddress;
 
 	// if this is the first element that is getting added to the list...
 	// let the next-pointers point to the first element/neighbor....
-	if(listOfNeighbors[u].size() == 1)
+	if(listOfNeighbors[headNode].size() == 1)
 	{
-		nextPositionIteratorInc[u] = vsAddress;
-		nextPositionIteratorDec[u] = vsAddress;
+		nextPositionIteratorInc[headNode] = esAddress;
+		nextPositionIteratorDec[headNode] = esAddress;
 	}
 
 	return 0;
 }
 
 
-int Graph :: removeFromInNbrs(VertexIdx u, VertexIdx v)
+// int Graph :: removeFromInNbrs(VertexIdx u, VertexIdx v)
+int Graph :: removeFromInNbrs(VertexIdx headNode, EdgeIdx eId)
 {
 	// This is to remove v from the in-neighbors of u...
 
 	// check if the current nextIterator is not at the same position as the 
 	// node to be removed...
 	// if so shift the position of the next-iterator to the next element
-	if(mapToNeighborsList[u].find(v) != mapToNeighborsList[u].end())
+	if(mapToNeighborsList[headNode].find(eId) != mapToNeighborsList[headNode].end())
 	{
-		if(nextPositionIteratorInc[u] == mapToNeighborsList[u][v])
+		// if the address of the next position iterator matches with that of that of the 
+		// element to be removed...
+		if(nextPositionIteratorInc[headNode] == mapToNeighborsList[headNode][eId])
 		{
-			updateIncPointer(u, v);
+			updateIncPointer(headNode, eId);
 		}
 
-		if(nextPositionIteratorDec[u] == mapToNeighborsList[u][v])
+		if(nextPositionIteratorDec[headNode] == mapToNeighborsList[headNode][eId])
 		{
-			updateDecPointer(u, v);
+			updateDecPointer(headNode, eId);
 		}
 
-		if(nextPositionIteratorTightInNbr[u] == mapToNeighborsList[u][v])
+		if(nextPositionIteratorTightInNbr[headNode] == mapToNeighborsList[headNode][eId])
 		{
-			updateTightInNbrIterator(u, v);
+			updateTightInNbrIterator(headNode, eId);
 		}
 
-		listOfNeighbors[u].erase(mapToNeighborsList[u][v]);		// removing v from the in-neighbors of u....
-		mapToNeighborsList[u].erase(v);							// remove element from the map as well
+		// removing eId from the in-neighbors of u....
+		// Remove eId using the iterator of eId, otherwise it is linear time... 
+		// we want constant time...
+		listOfNeighbors[headNode].erase(mapToNeighborsList[headNode][eId]);		
+		// remove element and its address from the map as well
+		mapToNeighborsList[headNode].erase(eId);
 	}
 
 	return 0;
 }
 
 
-int Graph :: addDirectedEdge(eTupleUnWeighted e)
+// int Graph :: addDirectedEdge(eTupleUnWeighted e)
+int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
 {
 	// e = u,v directed
-	VertexIdx u = get<0>(e);
-	VertexIdx v = get<1>(e);
+	// VertexIdx u = get<0>(e);
+	// VertexIdx v = get<1>(e);
+	VertexIdx headNode = v;
+	headOfEdgeId[eId] = headNode;
 
 	// add u to in-neighbors of v
-	InNbrs[v][u] += 1;
+	// InNbrs[v][u] += 1;
+	InNbrs[headNode].insert(eId);
+	addToInNbrs(headNode, eId);
 
+	/*
 	// Note that this is to be done only for the first time when u becomes in-neighbor of v..
 	// remember this is a multigraph.... 
 	if(InNbrs[v][u] == 1)
 	{
 		addToInNbrs(v, u);
 	}
+	*/
 
 	// add v to priority queue out-neighbors of u;
 	// get the current value of d(v)
-	Count dvVal = nodeInDeg[v];
+	Count dvVal = nodeInDeg[headNode];
 
-	// update v in the priority queue of u with this new value...
-	addToPriorityQueue(u, v, dvVal);
+	// update e in the priority queue of all u's except v with this v's value...
+	edgeVector e = edgeList[eId];
+	for(unsigned int i = 0; i < e.size(); i++)
+	{
+		VertexIdx u = e[i];
+		if(u != headNode)
+		{
+			addToPriorityQueue(u, eId, dvVal);
+		}
+	}
 
 	return 0;
 }
 
 
-int Graph :: removeDirectedEdge(eTupleUnWeighted e)
+int Graph :: removeDirectedEdgeFromInOutNbrs(EdgeIdx eId)
 {
 	// e = u,v directed
-	VertexIdx u = get<0>(e);
-	VertexIdx v = get<1>(e);
+	// VertexIdx u = get<0>(e);
+	// VertexIdx v = get<1>(e);
+
+	VertexIdx headNode = headOfEdgeId[eId];
 
 	// remove/decrement u from in-neighbors of v
-	InNbrs[v][u] -= 1;
+	// InNbrs[v][u] -= 1;
+
+	InNbrs[headNode].erase(eId);
+	removeFromInNbrs(eId, headNode);
 
 	// Note that this is to be done only if the u no more remains an in-neighbor of v..
 	// remember this is a multigraph.... 
-	if(InNbrs[v][u] == 0)
-	{
-		removeFromInNbrs(v, u);
-	}
+	// if(InNbrs[v][u] == 0)
+	// {
+	// 	removeFromInNbrs(v, u);
+	// }
 
 	// remove/decrement v from the priority queue out-neighbors of u
-	removeFromPriorityQueue(u, v);
+	edgeVector e = edgeList[eId];
+	for(unsigned int i = 0; i < e.size(); i++)
+	{
+		VertexIdx u = e[i];
+		if(u != headNode)
+		{
+			removeFromPriorityQueue(u, eId);
+		}
+	}
 	return 0;
 }
 
 
-int Graph :: flipDirectedEdge(eTupleUnWeighted e)
+// int Graph :: flipDirectedEdge(eTupleUnWeighted e)
+int Graph :: flipDirectedEdge(edgeVector e, VertexIdx changeHeadToNode)
 {
-	removeDirectedEdge(e);
+	removeDirectedEdgeFromInOutNbrs(e);
 
-	VertexIdx u = get<0>(e);
-	VertexIdx v = get<1>(e);
-	eTupleUnWeighted flippedEdge (v,u);
-	addDirectedEdge(e);
+	// VertexIdx u = get<0>(e);
+	// VertexIdx v = get<1>(e);
+	// eTupleUnWeighted flippedEdge (v,u);
+	addDirectedEdgeToInOutNbrs(e, changeHeadToNode);
 	
 	return 0;
 }
@@ -602,28 +664,30 @@ int Graph :: updateLabels(VertexIdx u, Count changeVal)
 	return 0;
 }
 
-VertexIdx Graph :: getTightInNbr(VertexIdx u)
+EdgeIdx Graph :: getTightInNbr(VertexIdx u)
 {
-	VertexIdx neighborToReturn = NullVertexIdx;
+	// VertexIdx neighborToReturn = NullVertexIdx;
+	EdgeIdx neighborEdgeIdToReturn = NullEdgeIdx;
 
-	list<VertexIdx> :: iterator updateItInc;
+	list<EdgeIdx> :: iterator updateItInc;
 
 	Count start = 0;
 	Count maxNumNeighborsToCheck = (Count)(4 * nodeInDeg[u]) / eta;
 	
-	unordered_map<VertexIdx, int> touchedNeighbors;
+	unordered_map<EdgeIdx, int> touchedNeighbors;
 	// note that you shouldnt be updating an element multiple times within a same 
 	// update... so keep track of the updated neighbors... 
 	// every time start with a new/empty list of neighbors that would be updated...
 	
+	// this gives a pointer to a edgeId... 	
 	updateItInc = nextPositionIteratorTightInNbr[u];
 
 	while(start < maxNumNeighborsToCheck)
 	{
 		// access the next neighbor 
-		VertexIdx usNextNeighbor = *updateItInc;
+		EdgeIdx usNextNeighborEdgeId = *updateItInc;
 		
-		if(touchedNeighbors.find(usNextNeighbor) == touchedNeighbors.end())
+		if(touchedNeighbors.find(usNextNeighborEdgeId) == touchedNeighbors.end())
 		{
 			// increase the counter...
 			start++;
@@ -638,12 +702,13 @@ VertexIdx Graph :: getTightInNbr(VertexIdx u)
 	        }
 
 			// add the updated neighbor to the list of updated neighbors...
-			touchedNeighbors[usNextNeighbor] = 1;
+			touchedNeighbors[usNextNeighborEdgeId] = 1;
 
 			// check if this current neighbor satisfies the tight in-neighbor condition...
-			if(nodeInDeg[usNextNeighbor] <= nodeInDeg[u] - eta/2)
+			VertexIdx edgeHeadNode = headOfEdgeId[usNextNeighborEdgeId]; 
+			if(nodeInDeg[edgeHeadNode] <= nodeInDeg[u] - eta/2)
 			{
-				neighborToReturn = usNextNeighbor;
+				neighborEdgeIdToReturn = usNextNeighborEdgeId;
 				break;
 			}
 		}
@@ -657,9 +722,9 @@ VertexIdx Graph :: getTightInNbr(VertexIdx u)
 	// update the position of the nextPosition Iterator... 
 	nextPositionIteratorTightInNbr[u] = updateItInc;
 
-	return neighborToReturn;
-
+	return neighborEdgeIdToReturn;
 }
+
 
 VertexIdx Graph :: getTightOutNbr(VertexIdx u)
 {
@@ -806,8 +871,9 @@ int main()
 					if(edgeMap.find(currentEdge) == edgeMap.end())
 					{
 						edgeMap[currentEdge] = edgeId;
-
+						G.addEdgeToEdgeList(currentEdge);
 						cout << "Add the edge -- " << edgeId << endl;
+
 						insertEdge(currentEdge, edgeId);
 
 						edgeId += 1;
