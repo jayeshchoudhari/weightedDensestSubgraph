@@ -95,7 +95,7 @@ class Graph
 		// int addToPriorityQueue(VertexIdx, VertexIdx, Count);
 		int addToPriorityQueue(VertexIdx, EdgeIdx, Count);
 		int removeFromPriorityQueue(VertexIdx, EdgeIdx);
-		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec);
+		int updateNextNeighbors(VertexIdx u, EdgeIdx usEId, Count newDuVal, int incOrDec);
 
 		int incrementDu(VertexIdx);
 		int decrementDu(VertexIdx);
@@ -267,7 +267,7 @@ int Graph :: addToPriorityQueue(VertexIdx u, EdgeIdx eId, Count vVal)
 	{
 		Count oldVal = nodeToOutdegMap[u][eId];
 		nodeToOutdegMap[u][eId] = vVal;
-		
+
 		outdegToNodeMap[u][oldVal].erase(eId);
 		outdegToNodeMap[u][vVal].insert(eId);
 	}
