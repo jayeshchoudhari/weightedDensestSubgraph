@@ -91,7 +91,7 @@ class Graph
 		// int addDirectedEdge(eTupleUnWeighted);
 		int addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
 		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId);
-		int flipDirectedEdge(eTupleUnWeighted);
+		int flipDirectedEdge(EdgeIdx eId, VertexIdx newHeadNode);
 		// int addToPriorityQueue(VertexIdx, VertexIdx, Count);
 		int addToPriorityQueue(VertexIdx, EdgeIdx, Count);
 		int removeFromPriorityQueue(VertexIdx, EdgeIdx);
@@ -114,8 +114,8 @@ class Graph
 		int updateIncPointer(VertexIdx u);
 		int updateDecPointer(VertexIdx u);
 		int updateTightInNbrIterator(VertexIdx u);
-		int addToInNbrs(VertexIdx u, VertexIdx v);
-		int removeFromInNbrs(VertexIdx u, VertexIdx v);
+		int addEdgeToInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId);
+		int removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId);
 };
 
 // Constructor to initialize the graph...
@@ -262,12 +262,20 @@ int Graph :: initializeDu(Count numVertices)
 
 int Graph :: addToPriorityQueue(VertexIdx u, EdgeIdx eId, Count vVal)
 {
-	// we need to add/update v in the priority queue of u;
-	// Count oldVal = nodeToOutdegMap[u][eId];
-	nodeToOutdegMap[u][eId] = vVal;
-
-	// outdegToNodeMap[u][oldVal].erase(eId);
-	outdegToNodeMap[u][vVal].insert(eId);
+	// we need to add/update eId in the priority queue of u;
+	if(nodeToOutdegMap[u].find(eId) != nodeToOutdegMap[u].end())
+	{
+		Count oldVal = nodeToOutdegMap[u][eId];
+		nodeToOutdegMap[u][eId] = vVal;
+		
+		outdegToNodeMap[u][oldVal].erase(eId);
+		outdegToNodeMap[u][vVal].insert(eId);
+	}
+	else
+	{
+		nodeToOutdegMap[u][eId] = vVal;
+		outdegToNodeMap[u][vVal].insert(eId);	
+	}
 
 	return 0;
 }
@@ -294,32 +302,39 @@ int Graph :: insertEdge(edgeVector e, int eId)
 	// VertexIdx v = get<1>(e);
 
 	VertexIdx w, wPrime;
-	EdgeIdx ePrime;
+	EdgeIdx ePrime, lastEId;
 
 	edgeVector::iterator minIt = min_element(e.begin(), e.end());
 	VertexIdx minDegVertex = distance(e.begin(), minIt);
 
 	w = minDegVertex;
+	lastEId = eId;
 
 	addDirectedEdgeToInOutNbrs(eId, w);
 
 	// headOfEdgeId[eId] = w;
 
 	// check if this results into making some neighboring edge of w tight... 
-	ePrime = getTightInNbr(w);		// tight edge... -- head of this edge give tight neighbor node...
+	ePrime = getTightInNbr(w);		// tight edge... -- head of this edge give tight In-neighbor node...
+	// i.e. an edge with a headNode whose degree is very less as compared to that of w....
 	// while(wPrime != -1)
 	while(ePrime != -1)
 	{
 		wPrime = headOfEdgeId[ePrime];
+		// wPrime's in-deg is very less...
+		// so flip the edge to wPrime..?
+
 		// eTupleUnWeighted eFlip(wPrime, w);
-		flipDirectedEdge(ePrime, w);
+		flipDirectedEdge(ePrime, wPrime);
+		// so now wPrime is settled -- i.e. we have increased its indegree 
+		// now we need to check if any in-neighbor of wPrime, violates the condition or has very less indegree...
 		w = wPrime;
-		wPrime = getTightInNbr(w);
+		lastEId = ePrime;
+		ePrime = getTightInNbr(w);
 	}
 
-	incrementDu(w);
+	incrementDu(w, lastEId);
 
-	incrementDu(w);
 	return 0;
 }
 
@@ -330,6 +345,8 @@ int Graph :: deleteEdge(eTupleUnWeighted e)
 	// VertexIdx u = get<0>(e);
 	// VertexIdx v = get<1>(e);
 	VertexIdx w, wPrime;
+	EdgeIdx ePrime, lastEId;
+
 	edgeVector::iterator minIt = min_element(e.begin(), e.end());
 	VertexIdx minDegVertex = distance(e.begin(), minIt);
 
@@ -415,7 +432,7 @@ int Graph :: updateTightInNbrIterator(VertexIdx u)
 
 
 // int Graph :: addToInNbrs(VertexIdx u, VertexIdx v)
-int Graph :: addToInNbrs(VertexIdx headNode, EdgeIdx eId)
+int Graph :: addEdgeToInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 {
 	// This is to add v to the in-neighbors of u...
 	// add to the list of in-neighbors and update the existence and 
@@ -438,7 +455,7 @@ int Graph :: addToInNbrs(VertexIdx headNode, EdgeIdx eId)
 
 
 // int Graph :: removeFromInNbrs(VertexIdx u, VertexIdx v)
-int Graph :: removeFromInNbrs(VertexIdx headNode, EdgeIdx eId)
+int Graph :: removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 {
 	// This is to remove v from the in-neighbors of u...
 
@@ -488,7 +505,7 @@ int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
 	// add u to in-neighbors of v
 	// InNbrs[v][u] += 1;
 	InNbrs[headNode].insert(eId);
-	addToInNbrs(headNode, eId);
+	addEdgeToInNbrsForVisitNext(headNode, eId);
 
 	/*
 	// Note that this is to be done only for the first time when u becomes in-neighbor of v..
@@ -530,7 +547,7 @@ int Graph :: removeDirectedEdgeFromInOutNbrs(EdgeIdx eId)
 	// InNbrs[v][u] -= 1;
 
 	InNbrs[headNode].erase(eId);
-	removeFromInNbrs(eId, headNode);
+	removeEdgeFromInNbrsForVisitNext(headNode, eId);
 
 	// Note that this is to be done only if the u no more remains an in-neighbor of v..
 	// remember this is a multigraph.... 
@@ -554,22 +571,22 @@ int Graph :: removeDirectedEdgeFromInOutNbrs(EdgeIdx eId)
 
 
 // int Graph :: flipDirectedEdge(eTupleUnWeighted e)
-int Graph :: flipDirectedEdge(edgeVector e, VertexIdx changeHeadToNode)
+int Graph :: flipDirectedEdge(edgeVector e, VertexIdx newHeadNode)
 {
 	removeDirectedEdgeFromInOutNbrs(e);
 
 	// VertexIdx u = get<0>(e);
 	// VertexIdx v = get<1>(e);
 	// eTupleUnWeighted flippedEdge (v,u);
-	addDirectedEdgeToInOutNbrs(e, changeHeadToNode);
+	addDirectedEdgeToInOutNbrs(e, newHeadNode);
 	
 	return 0;
 }
 
-int Graph :: updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec)
+int Graph :: updateNextNeighbors(VertexIdx u, EdgeIdx usEId, Count newDuVal, int incOrDec)
 {
-	list<VertexIdx> :: iterator updateItInc;
-	unordered_map<VertexIdx, int> touchedNeighbors;
+	list<EdgeIdx> :: iterator updateItInc;
+	unordered_map<EdgeIdx, int> touchedNeighbors;
 
 	Count start = 0;
 	Count maxNumNeighborsToUpdate = (Count) (4 * nodeInDeg[u]) / eta;
@@ -588,12 +605,16 @@ int Graph :: updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec)
 	while(start < maxNumNeighborsToUpdate)
 	{
 		// access the next neighbor 
-		VertexIdx usNextNeighbor = *updateItInc;
+		EdgeIdx usNextNeighbor = *updateItInc;
 		
 		if(touchedNeighbors.find(usNextNeighbor) == touchedNeighbors.end())
 		{		
 			// update new in-degree value of u to the neighbor
-			addToPriorityQueue(usNextNeighbor, u, newDuVal);
+			// addToPriorityQueue(u, usNextNeighbor, newDuVal);
+			// edgeVector eNbr = edgeList[usNextNeighbor];
+			VertexIdx nbrHeadNode = headOfEdgeId[usNextNeighbor];
+
+			addToPriorityQueue(nbrHeadNode, usEId, newDuVal);
 	
 			// increase the counter...
 			start++;
@@ -629,14 +650,14 @@ int Graph :: updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec)
 	return 0;
 }
 
-int Graph :: incrementDu(VertexIdx u)
+int Graph :: incrementDu(VertexIdx u, EdgeIdx usEId)
 {
 	updateLabels(u, 1);
 	nodeInDeg[u] += 1;
 	Count newDuVal = nodeInDeg[u];
 
 	// update 4 din(u)/eta next in-neigbors of u about the change in the in-degree of u 
-	updateNextNeighbors(u, newDuVal, 1);
+	updateNextNeighbors(u, usEId, newDuVal, 1);
 
 	return 0;
 }
@@ -781,7 +802,6 @@ int sampleFromBinomial(int wt, double p)
   	std::binomial_distribution<int> distribution (wt, p);
   	return distribution(gen);
 }
-
 
 
 int main()
