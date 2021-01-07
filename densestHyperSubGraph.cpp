@@ -90,8 +90,8 @@ class Graph
 
 		// int addDirectedEdge(eTupleUnWeighted);
 		int addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
-		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId);
-		int flipDirectedEdge(EdgeIdx eId, VertexIdx newHeadNode);
+		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx headNode);
+		int flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode);
 		// int addToPriorityQueue(VertexIdx, VertexIdx, Count);
 		int addToPriorityQueue(VertexIdx, EdgeIdx, Count);
 		int removeFromPriorityQueue(VertexIdx, EdgeIdx);
@@ -108,8 +108,8 @@ class Graph
 		int updateLabels(VertexIdx u, Count changeVal);
 		VertexIdx getMaxOutNbr(VertexIdx u);
 
-		int insertEdge(edgeVector, int);
-		int deleteEdge(edgeVector, int);
+		int insertEdge(edgeVector, Count);
+		int deleteEdge(edgeVector, Count);
 
 		int updateIncPointer(VertexIdx u);
 		int updateDecPointer(VertexIdx u);
@@ -294,7 +294,7 @@ int Graph :: removeFromPriorityQueue(VertexIdx u, EdgeIdx eId)
 }
 
 
-int Graph :: insertEdge(edgeVector e, int eId)
+int Graph :: insertEdge(edgeVector e, Count eId)
 {
 	// e = u,v -- at this moment an edge isnt directed...
 	// hereafter it will be... from here onwards we would orient the edges...
@@ -325,7 +325,7 @@ int Graph :: insertEdge(edgeVector e, int eId)
 		// so flip the edge to wPrime..?
 
 		// eTupleUnWeighted eFlip(wPrime, w);
-		flipDirectedEdge(ePrime, wPrime);
+		flipDirectedEdge(ePrime, wPrime, w);		// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
 		// so now wPrime is settled -- i.e. we have increased its indegree 
 		// now we need to check if any in-neighbor of wPrime, violates the condition or has very less indegree...
 		w = wPrime;
@@ -339,18 +339,23 @@ int Graph :: insertEdge(edgeVector e, int eId)
 }
 
 
-int Graph :: deleteEdge(eTupleUnWeighted e)
+int Graph :: deleteEdge(edgeVector e, int eId)
 {
 	// e = u,v directed
 	// VertexIdx u = get<0>(e);
 	// VertexIdx v = get<1>(e);
+
 	VertexIdx w, wPrime;
 	EdgeIdx ePrime, lastEId;
 
-	edgeVector::iterator minIt = min_element(e.begin(), e.end());
-	VertexIdx minDegVertex = distance(e.begin(), minIt);
+	VertexIdx headNode = headOfEdgeId[eId];
+	
+	// remove e from the InNbrs of headNode...
+	removeDirectedEdgeFromInOutNbrs(eId, headNode);
 
 	// check if u belongs to in-neighbors of v
+	
+	/*
 	if(InNbrs[v][u] != 0)
 	{
 		eTupleUnWeighted eDelete(u,v);
@@ -363,17 +368,23 @@ int Graph :: deleteEdge(eTupleUnWeighted e)
 		removeDirectedEdge(eDelete);	
 		w = u;
 	}
+	*/
 
+	lastEId = eId;
+	w = headNode;
+	ePrime = getTightOutNbr(w)
 	
-	while(getTightOutNbr(w) != NullVertexIdx)
+	while(ePrime != NullEdgeIdx)
 	{
-		wPrime = getTightOutNbr(w);
-		eTupleUnWeighted eFlip(w, wPrime);
-		flipDirectedEdge(eFlip);
-		wPrime = w;
+		wPrime = headOfEdgeId[ePrime];
+		// eTupleUnWeighted eFlip(w, wPrime);
+		flipDirectedEdge(ePrime, w, wPrime); 	// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
+		w = wPrime;
+		lastEId = ePrime;
+		ePrime = getTightInNbr(w);
 	}
 
-	decrementDu(w);
+	decrementDu(w, lastEId);
 
 	return 0;
 }
@@ -535,33 +546,25 @@ int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
 }
 
 
-int Graph :: removeDirectedEdgeFromInOutNbrs(EdgeIdx eId)
+int Graph :: removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx oldHeadNode)
 {
 	// e = u,v directed
 	// VertexIdx u = get<0>(e);
 	// VertexIdx v = get<1>(e);
 
-	VertexIdx headNode = headOfEdgeId[eId];
+	// VertexIdx oldHeadNode = headOfEdgeId[eId];
 
 	// remove/decrement u from in-neighbors of v
 	// InNbrs[v][u] -= 1;
 
-	InNbrs[headNode].erase(eId);
-	removeEdgeFromInNbrsForVisitNext(headNode, eId);
-
-	// Note that this is to be done only if the u no more remains an in-neighbor of v..
-	// remember this is a multigraph.... 
-	// if(InNbrs[v][u] == 0)
-	// {
-	// 	removeFromInNbrs(v, u);
-	// }
-
-	// remove/decrement v from the priority queue out-neighbors of u
+	InNbrs[oldHeadNode].erase(eId);
+	removeEdgeFromInNbrsForVisitNext(oldHeadNode, eId);
 	edgeVector e = edgeList[eId];
+
 	for(unsigned int i = 0; i < e.size(); i++)
 	{
 		VertexIdx u = e[i];
-		if(u != headNode)
+		if(u != oldHeadNode)
 		{
 			removeFromPriorityQueue(u, eId);
 		}
@@ -571,14 +574,14 @@ int Graph :: removeDirectedEdgeFromInOutNbrs(EdgeIdx eId)
 
 
 // int Graph :: flipDirectedEdge(eTupleUnWeighted e)
-int Graph :: flipDirectedEdge(edgeVector e, VertexIdx newHeadNode)
+int Graph :: flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode)
 {
-	removeDirectedEdgeFromInOutNbrs(e);
+	removeDirectedEdgeFromInOutNbrs(eId, oldHeadNode);
 
 	// VertexIdx u = get<0>(e);
 	// VertexIdx v = get<1>(e);
 	// eTupleUnWeighted flippedEdge (v,u);
-	addDirectedEdgeToInOutNbrs(e, newHeadNode);
+	addDirectedEdgeToInOutNbrs(eId, newHeadNode);
 	
 	return 0;
 }
@@ -750,6 +753,8 @@ EdgeIdx Graph :: getTightInNbr(VertexIdx u)
 VertexIdx Graph :: getTightOutNbr(VertexIdx u)
 {
 	VertexIdx t = getMaxOutNbr(u);
+	// degree of t in the view of u
+	// if the max neighbor has the degree that is very high than that of u... 
 	if(nodeToOutdegMap[u][t] >= nodeInDeg[u] + eta/2)
 	{
 		return t;
@@ -907,7 +912,9 @@ int main()
 				{
 					if(edgeMap.find(currentEdge) == edgeMap.end())
 					{
+						Count delEdgeId = edgeMap[currentEdge];
 						cout << "Deleting edge " << edgeMap[currentEdge] << endl;
+						deleteEdge(currentEdge, delEdgeId);
 					}
 					else
 					{
@@ -915,9 +922,6 @@ int main()
 					}
 				}
 				
-
-
-
 
 				// binomial sampling to scale the weight....
 				// sparsify -- sampling to decide for each copy of edge to be in the graph or not...
