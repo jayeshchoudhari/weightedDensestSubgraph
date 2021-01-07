@@ -21,15 +21,15 @@ class Graph
         vector <vector<Weight>> scaledAdjMatrix;		//scaled adj Matrix
         vector <vector<Weight>> sparsedAdjMatrix;		//sparsed adj Matrix
 
-        unordered_map<vector<VertexIdx>, Count> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
-        unordered_map<Count, VertexIdx> headOfEdgeId;
+        map<vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
 
         vector <vector<VertexIdx>> edgeList;
         unordered_map <VertexIdx, Count> nodeInDeg;
 
         vector <Count> du;
         // vector <vector<Count>> InNbrs;					//List of InNbrs
-        vector <set<EdgeIdx>> InNbrs;					//List of InNbrs
+        vector <set<EdgeIdx>> InNbrs;						//List of InNbrs
         vector <priority_queue<Count> > OutNbrs;
         vector <Count> nextNeighbor;
 
@@ -71,7 +71,7 @@ class Graph
 
 		Graph(int nv);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
 
-    	Graph(vector <VertexIdx> &v, vector<eTupleUnWeighted> &edList);		//takes in list/vector of nodes and vector of pairs which are edges (undirected)
+    	// Graph(vector <VertexIdx> &v, vector<edgeVector> &edList);		//takes in list/vector of nodes and vector of pairs which are edges (undirected)
 
     	int printGraphDetails();
 
@@ -97,8 +97,8 @@ class Graph
 		int removeFromPriorityQueue(VertexIdx, EdgeIdx);
 		int updateNextNeighbors(VertexIdx u, EdgeIdx usEId, Count newDuVal, int incOrDec);
 
-		int incrementDu(VertexIdx);
-		int decrementDu(VertexIdx);
+		int incrementDu(VertexIdx, EdgeIdx);
+		int decrementDu(VertexIdx, EdgeIdx);
 
 		EdgeIdx getTightInNbr(VertexIdx);
 		VertexIdx getTightOutNbr(VertexIdx);
@@ -108,14 +108,20 @@ class Graph
 		int updateLabels(VertexIdx u, Count changeVal);
 		VertexIdx getMaxOutNbr(VertexIdx u);
 
-		int insertEdge(edgeVector, Count);
-		int deleteEdge(edgeVector, Count);
+		int insertEdge(edgeVector, EdgeIdx);
+		int deleteEdge(edgeVector, EdgeIdx);
 
 		int updateIncPointer(VertexIdx u);
 		int updateDecPointer(VertexIdx u);
 		int updateTightInNbrIterator(VertexIdx u);
 		int addEdgeToInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId);
 		int removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId);
+
+		int checkEdgeExistence(edgeVector e);
+		int setEdgeId(edgeVector e, EdgeIdx eId);
+		EdgeIdx getEdgeId(edgeVector e);
+		int removeEdgeFromMap(edgeVector e);
+		int addEdgeToEdgeList(edgeVector e);
 };
 
 // Constructor to initialize the graph...
@@ -154,8 +160,8 @@ Graph :: Graph(int nv)
 	}
 }
 
-
-Graph :: Graph(vector <VertexIdx> &v, vector<eTupleUnWeighted> &e)
+/*
+Graph :: Graph(vector <VertexIdx> &v, vector<edgeVector> &e)
 // Graph::Graph(vector <VertexIdx> &v, vector<eTupleUnWeighted> &edList)
 {
 	nVertices = v.size();
@@ -174,7 +180,7 @@ Graph :: Graph(vector <VertexIdx> &v, vector<eTupleUnWeighted> &e)
 
 	adjList.resize(nVertices);
 
-	vector<eTupleUnWeighted>::iterator edgeIt;
+	vector<edgeVector>::iterator edgeIt;
 
 	// for(const eTupleUnWeighted &edgeIt : e)
 	for(edgeIt = e.begin(); edgeIt != e.end(); edgeIt++)
@@ -197,7 +203,7 @@ Graph :: Graph(vector <VertexIdx> &v, vector<eTupleUnWeighted> &e)
 		nodeInDeg[dest] += 1;
 	}
 }
-
+*/
 
 int Graph :: addEdgeToEdgeList(edgeVector e)
 {
@@ -294,7 +300,7 @@ int Graph :: removeFromPriorityQueue(VertexIdx u, EdgeIdx eId)
 }
 
 
-int Graph :: insertEdge(edgeVector e, Count eId)
+int Graph :: insertEdge(edgeVector e, EdgeIdx eId)
 {
 	// e = u,v -- at this moment an edge isnt directed...
 	// hereafter it will be... from here onwards we would orient the edges...
@@ -339,7 +345,7 @@ int Graph :: insertEdge(edgeVector e, Count eId)
 }
 
 
-int Graph :: deleteEdge(edgeVector e, int eId)
+int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 {
 	// e = u,v directed
 	// VertexIdx u = get<0>(e);
@@ -372,7 +378,7 @@ int Graph :: deleteEdge(edgeVector e, int eId)
 
 	lastEId = eId;
 	w = headNode;
-	ePrime = getTightOutNbr(w)
+	ePrime = getTightOutNbr(w);
 	
 	while(ePrime != NullEdgeIdx)
 	{
@@ -479,17 +485,17 @@ int Graph :: removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 		// element to be removed...
 		if(nextPositionIteratorInc[headNode] == mapToNeighborsList[headNode][eId])
 		{
-			updateIncPointer(headNode, eId);
+			updateIncPointer(headNode);
 		}
 
 		if(nextPositionIteratorDec[headNode] == mapToNeighborsList[headNode][eId])
 		{
-			updateDecPointer(headNode, eId);
+			updateDecPointer(headNode);
 		}
 
 		if(nextPositionIteratorTightInNbr[headNode] == mapToNeighborsList[headNode][eId])
 		{
-			updateTightInNbrIterator(headNode, eId);
+			updateTightInNbrIterator(headNode);
 		}
 
 		// removing eId from the in-neighbors of u....
@@ -505,7 +511,7 @@ int Graph :: removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 
 
 // int Graph :: addDirectedEdge(eTupleUnWeighted e)
-int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
+int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v)
 {
 	// e = u,v directed
 	// VertexIdx u = get<0>(e);
@@ -665,14 +671,14 @@ int Graph :: incrementDu(VertexIdx u, EdgeIdx usEId)
 	return 0;
 }
 
-int Graph :: decrementDu(VertexIdx u)
+int Graph :: decrementDu(VertexIdx u, EdgeIdx usEId)
 {
 	updateLabels(u, -1);
 	nodeInDeg[u] -= 1;
 	Count newDuVal = nodeInDeg[u];
 
 	// update 4 din(u)/eta next in-neigbors of u about the change in the in-degree of u 
-	updateNextNeighbors(u, newDuVal, -1);
+	updateNextNeighbors(u, usEId, newDuVal, -1);
 	
 	return 0;
 }
@@ -794,6 +800,35 @@ VertexIdx Graph :: getMaxOutNbr(VertexIdx u)
 }
 
 
+int Graph :: checkEdgeExistence(edgeVector e)
+{
+	if(edgeMap.find(e) == edgeMap.end())
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
+int Graph :: setEdgeId(edgeVector e, EdgeIdx eId)
+{
+	edgeMap[e] = eId;
+	return 0;
+}
+
+EdgeIdx Graph :: getEdgeId(edgeVector e)
+{
+	return edgeMap[e];
+}
+
+int Graph :: removeEdgeFromMap(edgeVector e)
+{
+	edgeMap.erase(e);
+	return 0;
+}
+
 // utilities...
 int sampleFromBinomial(int wt, double p)
 {
@@ -868,7 +903,7 @@ int main()
 			// scalingProb = (c log n) / (eps^2 * rho_min)  
 			scalingProb = (scalingProbParam_c * log2(n)) / (scalingEpsSquared * minWeightedDensity);
 
-			Count edgeId = 0;
+			EdgeIdx edgeId = 0;
 
 			while(getline(graphFile, line))
 			{
@@ -891,11 +926,13 @@ int main()
 
 				edgeVector currentEdge = tempVec;
 
-				if(insDel == "+")
+				if(insDel == '+')
 				{
-					if(edgeMap.find(currentEdge) == edgeMap.end())
+					// if(edgeMap.find(currentEdge) == edgeMap.end())
+					if(G.checkEdgeExistence(currentEdge) == 0)
 					{
-						edgeMap[currentEdge] = edgeId;
+						G.setEdgeId(currentEdge, edgeId);
+						// edgeMap[currentEdge] = edgeId;
 						G.addEdgeToEdgeList(currentEdge);
 						cout << "Add the edge -- " << edgeId << endl;
 
@@ -908,14 +945,16 @@ int main()
 						cout << "Edge already exists in the graph...\n";
 					}
 				}
-				else if(insDel == "-")
+				else if(insDel == '-')
 				{
-					if(edgeMap.find(currentEdge) != edgeMap.end())
+					// if(edgeMap.find(currentEdge) != edgeMap.end())
+					if(G.checkEdgeExistence(currentEdge) == 1)
 					{
-						Count delEdgeId = edgeMap[currentEdge];
-						cout << "Deleting edge " << edgeMap[currentEdge] << endl;
+						EdgeIdx delEdgeId = G.getEdgeId(currentEdge);
+						cout << "Deleting edge " << delEdgeId << endl;
 						G.deleteEdge(currentEdge, delEdgeId);
-						edgeMap.erase(currentEdge);
+						G.removeEdgeFromMap(currentEdge);
+						// edgeMap.erase(currentEdge);
 					}
 					else
 					{
