@@ -878,7 +878,7 @@ int main()
 
 				ss >> insDel;
 
-				hyperEdge tempVec;
+				edgeVector tempVec;
 
 				while(ss >> eEle)
 				{
@@ -899,7 +899,7 @@ int main()
 						G.addEdgeToEdgeList(currentEdge);
 						cout << "Add the edge -- " << edgeId << endl;
 
-						insertEdge(currentEdge, edgeId);
+						G.insertEdge(currentEdge, edgeId);
 
 						edgeId += 1;
 					}
@@ -910,11 +910,12 @@ int main()
 				}
 				else if(insDel == "-")
 				{
-					if(edgeMap.find(currentEdge) == edgeMap.end())
+					if(edgeMap.find(currentEdge) != edgeMap.end())
 					{
 						Count delEdgeId = edgeMap[currentEdge];
 						cout << "Deleting edge " << edgeMap[currentEdge] << endl;
-						deleteEdge(currentEdge, delEdgeId);
+						G.deleteEdge(currentEdge, delEdgeId);
+						edgeMap.erase(currentEdge);
 					}
 					else
 					{

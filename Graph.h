@@ -32,7 +32,7 @@ namespace rwNameSpace {
     using eTupleUnWeighted	= tuple<VertexIdx, VertexIdx>;
     using eTupleWeighted	= tuple<VertexIdx, VertexIdx, Count>;
     const EdgeIdx invalidEdge = -1;
-    using hyperEdge	= vector<VertexIdx>;	
+    using edgeVector	= vector<VertexIdx>;	
 }
 
 #endif
