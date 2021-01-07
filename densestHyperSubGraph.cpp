@@ -50,8 +50,8 @@ class Graph
         // Each element of a vector is a map --  where the map is with a key Count, and value is a set of 
         // of edgeIds, which have the headVertices with value (indegree) as Count...
         // and nodeToOutdegMap is a reverseMap of the same...
-        vector <map<Count, set<EdgeIdx>> > outdegToNodeMap;
-        vector <map<EdgeIdx, Count>> nodeToOutdegMap;
+        vector <map<Count, set<VertexIdx>> > outdegToNodeMap;
+        vector <map<VertexIdx, Count>> nodeToOutdegMap;
         // *************************************************************
 
 
@@ -93,12 +93,12 @@ class Graph
 		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx headNode);
 		int flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode);
 		// int addToPriorityQueue(VertexIdx, VertexIdx, Count);
-		int addToPriorityQueue(VertexIdx, EdgeIdx, Count);
-		int removeFromPriorityQueue(VertexIdx, EdgeIdx);
-		int updateNextNeighbors(VertexIdx u, EdgeIdx usEId, Count newDuVal, int incOrDec);
+		int addToPriorityQueue(VertexIdx, VertexIdx, Count);
+		int removeFromPriorityQueue(VertexIdx, VertexIdx);
+		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec);
 
-		int incrementDu(VertexIdx, EdgeIdx);
-		int decrementDu(VertexIdx, EdgeIdx);
+		int incrementDu(VertexIdx);
+		int decrementDu(VertexIdx);
 
 		EdgeIdx getTightInNbr(VertexIdx);
 		VertexIdx getTightOutNbr(VertexIdx);
@@ -266,35 +266,37 @@ int Graph :: initializeDu(Count numVertices)
 }
 */
 
-int Graph :: addToPriorityQueue(VertexIdx u, EdgeIdx eId, Count vVal)
+int Graph :: addToPriorityQueue(VertexIdx u, VertexIdx headNode, Count headVal)
 {
-	// we need to add/update eId in the priority queue of u;
-	if(nodeToOutdegMap[u].find(eId) != nodeToOutdegMap[u].end())
+	// we need to add/update headNode in the priority queue of u;
+	if(nodeToOutdegMap[u].find(headNode) != nodeToOutdegMap[u].end())
 	{
-		Count oldVal = nodeToOutdegMap[u][eId];
-		nodeToOutdegMap[u][eId] = vVal;
+		Count oldVal = nodeToOutdegMap[u][headNode];
+		nodeToOutdegMap[u][headNode] = headVal;
 
-		outdegToNodeMap[u][oldVal].erase(eId);
-		outdegToNodeMap[u][vVal].insert(eId);
+		outdegToNodeMap[u][oldVal].erase(headNode);
+		outdegToNodeMap[u][headVal].insert(headNode);
 	}
 	else
 	{
-		nodeToOutdegMap[u][eId] = vVal;
-		outdegToNodeMap[u][vVal].insert(eId);	
+		nodeToOutdegMap[u][headNode] = headVal;
+		outdegToNodeMap[u][headVal].insert(headNode);
 	}
 
 	return 0;
 }
 
 
-int Graph :: removeFromPriorityQueue(VertexIdx u, EdgeIdx eId)
+int Graph :: removeFromPriorityQueue(VertexIdx u, VertexIdx oldHeadNode)
 {
 	// remove/decrement v in the priority queue of u;
-	Count oldVal = nodeToOutdegMap[u][eId];			// gets the value of the degree of head node of eId...
-	// Count newVal = oldVal - 1;
-	nodeToOutdegMap[u].erase(eId);
-	outdegToNodeMap[u][oldVal].erase(eId);
-	// outdegToNodeMap[u][newVal].insert(eId);
+	Count oldVal = nodeToOutdegMap[u][oldHeadNode];			// gets the value of the degree of head node of eId...
+	Count newVal = oldVal - 1;
+	nodeToOutdegMap[u][oldHeadNode] = newVal;
+	
+	nodeToOutdegMap[u].erase(oldHeadNode);
+	outdegToNodeMap[u][oldVal].erase(oldHeadNode);
+	outdegToNodeMap[u][newVal].insert(oldHeadNode);
 
 	return 0;
 }
@@ -339,7 +341,7 @@ int Graph :: insertEdge(edgeVector e, EdgeIdx eId)
 		ePrime = getTightInNbr(w);
 	}
 
-	incrementDu(w, lastEId);
+	incrementDu(w);
 
 	return 0;
 }
@@ -390,7 +392,7 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 		ePrime = getTightInNbr(w);
 	}
 
-	decrementDu(w, lastEId);
+	decrementDu(w);
 
 	return 0;
 }
@@ -535,7 +537,7 @@ int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v)
 
 	// add v to priority queue out-neighbors of u;
 	// get the current value of d(v)
-	Count dvVal = nodeInDeg[headNode];
+	Count headNodeVal = nodeInDeg[headNode];
 
 	// update e in the priority queue of all u's except v with this v's value...
 	edgeVector e = edgeList[eId];
@@ -544,7 +546,7 @@ int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v)
 		VertexIdx u = e[i];
 		if(u != headNode)
 		{
-			addToPriorityQueue(u, eId, dvVal);
+			addToPriorityQueue(u, headNode, headNodeVal);
 		}
 	}
 
@@ -572,7 +574,7 @@ int Graph :: removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx oldHeadNode)
 		VertexIdx u = e[i];
 		if(u != oldHeadNode)
 		{
-			removeFromPriorityQueue(u, eId);
+			removeFromPriorityQueue(u, oldHeadNode);
 		}
 	}
 	return 0;
@@ -592,23 +594,23 @@ int Graph :: flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newH
 	return 0;
 }
 
-int Graph :: updateNextNeighbors(VertexIdx u, EdgeIdx usEId, Count newDuVal, int incOrDec)
+int Graph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int incOrDec)
 {
 	list<EdgeIdx> :: iterator updateItInc;
 	unordered_map<EdgeIdx, int> touchedNeighbors;
 
 	Count start = 0;
-	Count maxNumNeighborsToUpdate = (Count) (4 * nodeInDeg[u]) / eta;
+	Count maxNumNeighborsToUpdate = (Count) (4 * nodeInDeg[headNode]) / eta;
 	// note that you shouldnt be updating an element multiple times within a same 
 	// update... so keep track of the updated neighbors... 
 	// every time start with a new/empty list of neighbors that would be updated...
 	if(incOrDec == 1)
 	{
-		updateItInc = nextPositionIteratorInc[u];
+		updateItInc = nextPositionIteratorInc[headNode];
 	}
 	else if (incOrDec == -1)
 	{
-		updateItInc = nextPositionIteratorDec[u];
+		updateItInc = nextPositionIteratorDec[headNode];
 	}
 
 	while(start < maxNumNeighborsToUpdate)
@@ -620,10 +622,17 @@ int Graph :: updateNextNeighbors(VertexIdx u, EdgeIdx usEId, Count newDuVal, int
 		{		
 			// update new in-degree value of u to the neighbor
 			// addToPriorityQueue(u, usNextNeighbor, newDuVal);
-			// edgeVector eNbr = edgeList[usNextNeighbor];
-			VertexIdx nbrHeadNode = headOfEdgeId[usNextNeighbor];
+			edgeVector eNbr = edgeList[usNextNeighbor];
+			for(unsigned int i = 0; i < eNbr.size(); i++)
+			{
+				VertexIdx nbrNode = eNbr[i];
+				if(nbrNode != headNode)
+				{
+					addToPriorityQueue(nbrNode, headNode, newDuVal);		
+				}
+			}
+			// VertexIdx nbrHeadNode = headOfEdgeId[usNextNeighbor];
 
-			addToPriorityQueue(nbrHeadNode, usEId, newDuVal);
 	
 			// increase the counter...
 			start++;
@@ -631,9 +640,9 @@ int Graph :: updateNextNeighbors(VertexIdx u, EdgeIdx usEId, Count newDuVal, int
 			// increment the pointer position...
 			updateItInc++;
 			// if we hit end of the list... round-robbin to start of the list...
-			if(updateItInc == listOfNeighbors[u].end())
+			if(updateItInc == listOfNeighbors[headNode].end())
 	        {
-	        	updateItInc = listOfNeighbors[u].begin();
+	        	updateItInc = listOfNeighbors[headNode].begin();
 	        }
 
 			// add the updated neighbor to the list of updated neighbors...
@@ -649,36 +658,36 @@ int Graph :: updateNextNeighbors(VertexIdx u, EdgeIdx usEId, Count newDuVal, int
 	// update the position of the nextPosition Iterator... 
 	if(incOrDec == 1)
 	{
-		nextPositionIteratorInc[u] = updateItInc;
+		nextPositionIteratorInc[headNode] = updateItInc;
 	}
 	else
 	{
-		nextPositionIteratorDec[u] = updateItInc;
+		nextPositionIteratorDec[headNode] = updateItInc;
 	}
 
 	return 0;
 }
 
-int Graph :: incrementDu(VertexIdx u, EdgeIdx usEId)
+int Graph :: incrementDu(VertexIdx headNode)
 {
-	updateLabels(u, 1);
-	nodeInDeg[u] += 1;
-	Count newDuVal = nodeInDeg[u];
+	updateLabels(headNode, 1);
+	nodeInDeg[headNode] += 1;
+	Count newDuVal = nodeInDeg[headNode];
 
-	// update 4 din(u)/eta next in-neigbors of u about the change in the in-degree of u 
-	updateNextNeighbors(u, usEId, newDuVal, 1);
+	// update 4 din(headNode)/eta next in-neigbors of u about the change in the in-degree of u 
+	updateNextNeighbors(headNode, newDuVal, 1);
 
 	return 0;
 }
 
-int Graph :: decrementDu(VertexIdx u, EdgeIdx usEId)
+int Graph :: decrementDu(VertexIdx oldHeadNode)
 {
-	updateLabels(u, -1);
-	nodeInDeg[u] -= 1;
-	Count newDuVal = nodeInDeg[u];
+	updateLabels(oldHeadNode, -1);
+	nodeInDeg[oldHeadNode] -= 1;
+	Count newDuVal = nodeInDeg[oldHeadNode];
 
 	// update 4 din(u)/eta next in-neigbors of u about the change in the in-degree of u 
-	updateNextNeighbors(u, usEId, newDuVal, -1);
+	updateNextNeighbors(oldHeadNode, newDuVal, -1);
 	
 	return 0;
 }
