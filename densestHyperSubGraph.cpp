@@ -21,7 +21,7 @@ class Graph
         vector <vector<Weight>> scaledAdjMatrix;		//scaled adj Matrix
         vector <vector<Weight>> sparsedAdjMatrix;		//sparsed adj Matrix
 
-        map<vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        multimap<vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
         unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
 
         vector <vector<VertexIdx>> edgeList;
@@ -117,8 +117,8 @@ class Graph
 		int addEdgeToInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId);
 		int removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId);
 
-		int checkEdgeExistence(edgeVector e);
 		int setEdgeId(edgeVector e, EdgeIdx eId);
+		EdgeIdx checkEdgeExistence(edgeVector e);
 		EdgeIdx getEdgeId(edgeVector e);
 		int removeEdgeFromMap(edgeVector e);
 		int addEdgeToEdgeList(edgeVector e);
@@ -809,32 +809,39 @@ VertexIdx Graph :: getMaxOutNbr(VertexIdx u)
 }
 
 
-int Graph :: checkEdgeExistence(edgeVector e)
+EdgeIdx Graph :: checkEdgeExistence(edgeVector e)
 {
-	if(edgeMap.find(e) == edgeMap.end())
+	multimap<<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	if(edgeMapIt == edgeMap.end())
 	{
-		return 0;
+		return NullEdgeIdx;
 	}
 	else
 	{
-		return 1;
+		EdgeIdx eId = edgeMapIt->second;
+		return eId;
 	}
 }
 
 int Graph :: setEdgeId(edgeVector e, EdgeIdx eId)
 {
-	edgeMap[e] = eId;
+	// edgeMap[e] = eId;
+	edgeMap.insert(pair<vector<VertexIdx>, EdgeIdx>(e, eId));
 	return 0;
 }
 
 EdgeIdx Graph :: getEdgeId(edgeVector e)
 {
-	return edgeMap[e];
+	multimap<<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	EdgeIdx eId = edgeMapIt->second;
+	return eId;
 }
 
 int Graph :: removeEdgeFromMap(edgeVector e)
 {
-	edgeMap.erase(e);
+	// edgeMap.erase(e);
+	multimap<<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	edgeMap.erase(edgeMapIt);
 	return 0;
 }
 
@@ -935,10 +942,9 @@ int main()
 
 				edgeVector currentEdge = tempVec;
 
-				if(insDel == '+')
+				if(currentEdge.size() > 1)
 				{
-					// if(edgeMap.find(currentEdge) == edgeMap.end())
-					if(G.checkEdgeExistence(currentEdge) == 0)
+					if(insDel == '+')
 					{
 						G.setEdgeId(currentEdge, edgeId);
 						// edgeMap[currentEdge] = edgeId;
@@ -949,28 +955,28 @@ int main()
 
 						edgeId += 1;
 					}
-					else
+					else if(insDel == '-')
 					{
-						cout << "Edge already exists in the graph...\n";
+						// if(edgeMap.find(currentEdge) != edgeMap.end())
+						EdgeIdx delEdgeId = G.checkEdgeExistence(currentEdge);
+						if(delEdgeId != NullEdgeIdx)
+						{
+							// G.getEdgeId(currentEdge);
+							cout << "Deleting edge " << delEdgeId << endl;
+							G.deleteEdge(currentEdge, delEdgeId);
+							G.removeEdgeFromMap(currentEdge);
+							// edgeMap.erase(currentEdge);
+						}
+						else
+						{
+							cout << "Edge does not exists to delete...\n";
+						}
 					}
 				}
-				else if(insDel == '-')
+				else
 				{
-					// if(edgeMap.find(currentEdge) != edgeMap.end())
-					if(G.checkEdgeExistence(currentEdge) == 1)
-					{
-						EdgeIdx delEdgeId = G.getEdgeId(currentEdge);
-						cout << "Deleting edge " << delEdgeId << endl;
-						G.deleteEdge(currentEdge, delEdgeId);
-						G.removeEdgeFromMap(currentEdge);
-						// edgeMap.erase(currentEdge);
-					}
-					else
-					{
-						cout << "Edge does not exists to delete...\n";
-					}
+					cout << "Edge has less than 2 end points...\n"; 
 				}
-				
 
 				// binomial sampling to scale the weight....
 				// sparsify -- sampling to decide for each copy of edge to be in the graph or not...
