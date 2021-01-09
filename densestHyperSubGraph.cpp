@@ -811,7 +811,7 @@ VertexIdx Graph :: getMaxOutNbr(VertexIdx u)
 
 EdgeIdx Graph :: checkEdgeExistence(edgeVector e)
 {
-	multimap<<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
 	if(edgeMapIt == edgeMap.end())
 	{
 		return NullEdgeIdx;
@@ -832,7 +832,7 @@ int Graph :: setEdgeId(edgeVector e, EdgeIdx eId)
 
 EdgeIdx Graph :: getEdgeId(edgeVector e)
 {
-	multimap<<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
 	EdgeIdx eId = edgeMapIt->second;
 	return eId;
 }
@@ -840,7 +840,7 @@ EdgeIdx Graph :: getEdgeId(edgeVector e)
 int Graph :: removeEdgeFromMap(edgeVector e)
 {
 	// edgeMap.erase(e);
-	multimap<<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
 	edgeMap.erase(edgeMapIt);
 	return 0;
 }

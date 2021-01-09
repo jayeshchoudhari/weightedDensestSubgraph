@@ -31,8 +31,10 @@ namespace rwNameSpace {
     using ePair 	= pair<VertexIdx, VertexIdx>;
     using eTupleUnWeighted	= tuple<VertexIdx, VertexIdx>;
     using eTupleWeighted	= tuple<VertexIdx, VertexIdx, Count>;
-    const EdgeIdx invalidEdge = -1;
-    using edgeVector	= vector<VertexIdx>;	
+    // const EdgeIdx invalidEdge = -1;
+    using edgeVector	= vector<VertexIdx>;
+    const VertexIdx NullVertexIdx = -1;
+	const EdgeIdx NullEdgeIdx = -1;	
 }
 
 #endif
