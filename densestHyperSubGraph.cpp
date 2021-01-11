@@ -9,11 +9,11 @@ class Graph
     private:
         Count nVertices; 								//number of vertices in the graph
         Count nEdges;     								//number of edges in this list
-        VertexIdx NullVertexIdx = -1;
-        EdgeIdx NullEdgeIdx = -1;
-
+ 
         vector <VertexIdx> srcs;      					//array of source vertices
         vector <VertexIdx> dsts;      					//array of destination vertices
+
+        double epsVal;
         
         vector <VertexIdx> nodeList;
         vector <vector<VertexIdx>> adjList;				//adj List
@@ -26,6 +26,9 @@ class Graph
 
         vector <vector<VertexIdx>> edgeList;
         unordered_map <VertexIdx, Count> nodeInDeg;
+        map <Count, set<VertexIdx>> reverseNodeInDeg;
+
+        Count maxInDeg;
 
         vector <Count> du;
         // vector <vector<Count>> InNbrs;					//List of InNbrs
@@ -103,13 +106,11 @@ class Graph
 		EdgeIdx getTightInNbr(VertexIdx);
 		VertexIdx getTightOutNbr(VertexIdx);
 
-		Count getLabel(VertexIdx);
-		Count getMaxLabel();
 		int updateLabels(VertexIdx u, Count changeVal);
 		VertexIdx getMaxOutNbr(VertexIdx u);
 
-		int insertEdge(edgeVector, EdgeIdx);
-		int deleteEdge(edgeVector, EdgeIdx);
+		int insertEdge(edgeVector e, EdgeIdx eId);
+		int deleteEdge(edgeVector e, EdgeIdx eId);
 
 		int updateIncPointer(VertexIdx u);
 		int updateDecPointer(VertexIdx u);
@@ -122,6 +123,11 @@ class Graph
 		EdgeIdx getEdgeId(edgeVector e);
 		int removeEdgeFromMap(edgeVector e);
 		int addEdgeToEdgeList(edgeVector e);
+
+
+		Count getLabel(VertexIdx);
+		Count getMaxLabel();
+		Count getMaxDensity();
 };
 
 // Constructor to initialize the graph...
@@ -129,11 +135,13 @@ class Graph
 Graph :: Graph(int nv)
 {
 	nVertices = nv;
+	epsVal = 0.1;
 	OutNbrs.resize(nv);
 	du.resize(nv);
 	outdegToNodeMap.resize(nv);
 	nodeToOutdegMap.resize(nv);
 	// nextNeighbor.resize(nv);
+	InNbrs.resize(nv);
 
 	// to maintain visitNext structure... 
 	listOfNeighbors.resize(nv);
@@ -158,6 +166,8 @@ Graph :: Graph(int nv)
 		// InNbrs.push_back(eachRow);
 		// nextNeighbor[i] = 0;
 	}
+
+	maxInDeg = 0;
 }
 
 /*
@@ -633,7 +643,6 @@ int Graph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int incOrDe
 			}
 			// VertexIdx nbrHeadNode = headOfEdgeId[usNextNeighbor];
 
-	
 			// increase the counter...
 			start++;
 	
@@ -671,7 +680,9 @@ int Graph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int incOrDe
 int Graph :: incrementDu(VertexIdx headNode)
 {
 	updateLabels(headNode, 1);
+	Count oldVal = nodeInDeg[headNode];
 	nodeInDeg[headNode] += 1;
+
 	Count newDuVal = nodeInDeg[headNode];
 
 	// update 4 din(headNode)/eta next in-neigbors of u about the change in the in-degree of u 
@@ -683,6 +694,7 @@ int Graph :: incrementDu(VertexIdx headNode)
 int Graph :: decrementDu(VertexIdx oldHeadNode)
 {
 	updateLabels(oldHeadNode, -1);
+	Count oldVal = nodeInDeg[oldHeadNode];
 	nodeInDeg[oldHeadNode] -= 1;
 	Count newDuVal = nodeInDeg[oldHeadNode];
 
@@ -778,23 +790,6 @@ VertexIdx Graph :: getTightOutNbr(VertexIdx u)
 }
 
 
-Count Graph :: getLabel(VertexIdx u)
-{
-	return ReverseLabels[u];
-}
-
-Count Graph :: getMaxLabel()
-{
-	map<Count, set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
-	Count maxVal = rit->first;
-
-	set<VertexIdx> maxValSet = rit->second;
-	set<VertexIdx>::iterator it = maxValSet.begin();
-	VertexIdx maxEle = *it;
-
-	return maxVal;
-}
-
 
 VertexIdx Graph :: getMaxOutNbr(VertexIdx u)
 {
@@ -845,6 +840,33 @@ int Graph :: removeEdgeFromMap(edgeVector e)
 	return 0;
 }
 
+
+Count Graph :: getMaxDensity()
+{
+	map<Count, set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
+	Count currMaxDensityValue = (labelsIt->first)*(1-epsVal);
+	return currMaxDensityValue;
+}
+
+Count Graph :: getLabel(VertexIdx u)
+{
+	return ReverseLabels[u];
+}
+
+Count Graph :: getMaxLabel()
+{
+	map<Count, set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
+	Count maxVal = rit->first;
+
+	set<VertexIdx> maxValSet = rit->second;
+	set<VertexIdx>::iterator it = maxValSet.begin();
+	VertexIdx maxEle = *it;
+
+	return maxVal;
+}
+
+
+
 // utilities...
 int sampleFromBinomial(int wt, double p)
 {
@@ -862,8 +884,8 @@ int sampleFromBinomial(int wt, double p)
 
 int main()
 {
-	std::vector <VertexIdx> v = {0,1,2,3};
-	std::vector<pair<VertexIdx, VertexIdx>> e = {{1, 3}, {3, 0}, {0, 2}, {2, 1}, {2, 3}};
+	// std::vector <VertexIdx> v = {0,1,2,3};
+	// std::vector<pair<VertexIdx, VertexIdx>> e = {{1, 3}, {3, 0}, {0, 2}, {2, 1}, {2, 3}};
 
 	// each file starts with n, m, and max_weight i.e. two numbers on each line
 	// after that there are m lines each with the edge information
