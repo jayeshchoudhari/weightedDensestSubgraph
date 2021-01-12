@@ -66,7 +66,7 @@ class Graph
         Count maxLabel;					//Node with the max Indegree
 
 
-        float eta;
+        float eta = 1;
 
     public:
 
@@ -322,8 +322,19 @@ int Graph :: insertEdge(edgeVector e, EdgeIdx eId)
 	VertexIdx w, wPrime;
 	EdgeIdx ePrime, lastEId;
 
-	edgeVector::iterator minIt = min_element(e.begin(), e.end());
-	VertexIdx minDegVertex = distance(e.begin(), minIt);
+	// get indegree of all the nodes...
+	// and then find min of it...
+	VertexIdx minDegVertex = e[0];
+	Count minDegree = nodeInDeg[e[0]];
+
+	for(int i = 0; i < e.size(); i++)
+	{
+		if(nodeInDeg[e[i]] < minDegree)
+		{
+			minDegreeVertex = e[i];
+			minDegree = nodeInDeg[e[i]];
+		}
+	}
 
 	w = minDegVertex;
 	lastEId = eId;
@@ -708,7 +719,7 @@ int Graph :: updateLabels(VertexIdx u, Count changeVal)
 {
 	// updating the Labels data-structure...
 	Labels[nodeInDeg[u]].erase(u);
-	nodeInDeg[u] +=  changeVal;
+	// nodeInDeg[u] +=  changeVal;
 	Labels[nodeInDeg[u]].insert(u);
 	ReverseLabels[u] = nodeInDeg[u];
 
@@ -895,7 +906,8 @@ int main()
 	// after inserting each edge the graph is updated...
 
 	//read each line from file...
-	string graphFileName = "dblp.theory.hypergraph.txt";
+	// string graphFileName = "dblp.theory.hypergraph.txt";
+	string graphFileName = "sampleGraph-1.txt";
 	ifstream graphFile;
 
 	string line;
@@ -942,6 +954,7 @@ int main()
 			scalingProb = (scalingProbParam_c * log2(n)) / (scalingEpsSquared * minWeightedDensity);
 
 			EdgeIdx edgeId = 0;
+			edgeVector currentEdge;
 
 			while(getline(graphFile, line))
 			{
@@ -958,27 +971,36 @@ int main()
 					tempVec.push_back(eEle);
 				}
 
-				//pop_back
-				Count yearVal = tempVec[tempVec.size()-1]; 	// last element is the year/timestamp value...
-				tempVec.pop_back();
-
-				edgeVector currentEdge = tempVec;
-
-				if(currentEdge.size() > 1)
+				if(tempVec.size() >= 2)
 				{
+					
 					if(insDel == '+')
 					{
-						G.setEdgeId(currentEdge, edgeId);
-						// edgeMap[currentEdge] = edgeId;
-						G.addEdgeToEdgeList(currentEdge);
-						cout << "Add the edge -- " << edgeId << endl;
+						//pop_back year val... the last index....
+						Count yearVal = tempVec[tempVec.size()-1]; 	// last element is the year/timestamp value...
+						tempVec.pop_back();
 
-						G.insertEdge(currentEdge, edgeId);
+						currentEdge = tempVec;
 
-						edgeId += 1;
+						if(currentEdge.size() >= 2)
+						{
+							G.setEdgeId(currentEdge, edgeId);
+							// edgeMap[currentEdge] = edgeId;
+							G.addEdgeToEdgeList(currentEdge);
+							cout << "Add the edge -- " << edgeId << endl;
+
+							G.insertEdge(currentEdge, edgeId);
+
+							edgeId += 1;
+						}
+						else
+						{
+							cout << "Edge has less than 2 end points...\n";
+						}
 					}
 					else if(insDel == '-')
 					{
+						currentEdge = tempVec;
 						// if(edgeMap.find(currentEdge) != edgeMap.end())
 						EdgeIdx delEdgeId = G.checkEdgeExistence(currentEdge);
 						if(delEdgeId != NullEdgeIdx)
