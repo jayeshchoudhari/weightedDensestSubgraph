@@ -327,11 +327,11 @@ int Graph :: insertEdge(edgeVector e, EdgeIdx eId)
 	VertexIdx minDegVertex = e[0];
 	Count minDegree = nodeInDeg[e[0]];
 
-	for(int i = 0; i < e.size(); i++)
+	for(unsigned int i = 0; i < e.size(); i++)
 	{
 		if(nodeInDeg[e[i]] < minDegree)
 		{
-			minDegreeVertex = e[i];
+			minDegVertex = e[i];
 			minDegree = nodeInDeg[e[i]];
 		}
 	}
