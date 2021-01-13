@@ -785,11 +785,17 @@ int Graph :: decrementDu(VertexIdx oldHeadNode)
 
 int Graph :: updateLabels(VertexIdx u, Count changeVal)
 {
+	Count oldVal = nodeInDeg[u];
+	Count newVal = nodeInDeg[u] + changeVal;
 	// updating the Labels data-structure...
-	Labels[nodeInDeg[u]].erase(u);
+	Labels[oldVal].erase(u);
 	// nodeInDeg[u] +=  changeVal;
-	Labels[nodeInDeg[u]].insert(u);
-	ReverseLabels[u] = nodeInDeg[u];
+	if(Labels[oldVal].size() == 0)
+	{
+		Labels.erase(oldVal);	
+	}
+	Labels[newVal].insert(u);
+	ReverseLabels[u] = newVal;
 
 	return 0;
 }
