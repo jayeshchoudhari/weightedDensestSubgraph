@@ -127,8 +127,8 @@ class Graph
 
 
 		Count getLabel(VertexIdx);
-		Count getMaxLabelNode();
-		Count getDensity();
+		Count getMaxLabel();
+		double getDensity();
 
 
 		int printPQs();
@@ -935,10 +935,10 @@ int Graph :: removeEdgeFromMap(edgeVector e)
 }
 
 
-Count Graph :: getDensity()
+double Graph :: getDensity()
 {
 	map<Count, set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
-	Count currMaxDensityValue = (labelsIt->first)*(1-epsVal);
+	double currMaxDensityValue = (labelsIt->first)*(1-epsVal);
 	return currMaxDensityValue;
 }
 
@@ -947,7 +947,7 @@ Count Graph :: getLabel(VertexIdx u)
 	return ReverseLabels[u];
 }
 
-Count Graph :: getMaxLabelNode()
+Count Graph :: getMaxLabel()
 {
 	map<Count, set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
 	Count maxVal = rit->first;
