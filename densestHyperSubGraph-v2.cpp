@@ -53,8 +53,9 @@ class Graph
         // Each element of a vector is a map --  where the map is with a key Count, and value is a set of 
         // of edgeIds, which have the headVertices with value (indegree) as Count...
         // and nodeToOutdegMap is a reverseMap of the same...
-        vector <map<Count, set<VertexIdx>> > outdegToNodeMap;
-        vector <map<VertexIdx, Count>> nodeToOutdegMap;
+        vector <map<Count, set<EdgeIdx>> > outdegToNodeMap;
+        vector <map<EdgeIdx, Count>> nodeToOutdegMap;
+        vector <unordered_map<VertexIdx, Count>> InDegreeFromNodesView;
         // *************************************************************
 
 
@@ -96,16 +97,16 @@ class Graph
 		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx headNode);
 		int flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode);
 		// int addToPriorityQueue(VertexIdx, VertexIdx, Count);
-		int addToPriorityQueue(VertexIdx, VertexIdx, Count);
-		int removeFromPriorityQueue(VertexIdx, VertexIdx);
+		int addToPriorityQueue(VertexIdx, VertexIdx, Count, EdgeIdx);
+		int removeFromPriorityQueue(VertexIdx, VertexIdx, EdgeIdx);
 		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec);
 
 		int incrementDu(VertexIdx);
 		int decrementDu(VertexIdx);
 
 		EdgeIdx getTightInNbr(VertexIdx);
-		VertexIdx getTightOutNbr(VertexIdx);
-		VertexIdx getMaxOutNbr(VertexIdx u);
+		EdgeIdx getTightOutNbr(VertexIdx);
+		EdgeIdx getMaxOutNbr(VertexIdx u);
 
 		int updateLabels(VertexIdx u, Count changeVal);
 
@@ -143,6 +144,7 @@ Graph :: Graph(int nv)
 	// du.resize(nv);
 	outdegToNodeMap.resize(nv);
 	nodeToOutdegMap.resize(nv);
+	InDegreeFromNodesView.resize(nv);
 	// nextNeighbor.resize(nv);
 	InNbrs.resize(nv);
 
@@ -224,18 +226,18 @@ Graph :: Graph(vector <VertexIdx> &v, vector<edgeVector> &e)
 int Graph :: printPQs()
 {
 	VertexIdx ni = 0;
-	cout << "Printing outdegToNodeMap -- vector <map<Count, set<VertexIdx>>>\n"; 
-	vector <map<Count, set<VertexIdx>>> :: iterator it1;
+	cout << "Printing outdegToNodeMap -- vector <map<Count, set<EdgeIdx>>>\n"; 
+	vector <map<Count, set<EdgeIdx>>> :: iterator it1;
 	for(it1 = outdegToNodeMap.begin(); it1 != outdegToNodeMap.end(); it1++)
 	{
 		cout << ni << "\n";
-		map<Count, set<VertexIdx>> temp = *it1;
-		map<Count, set<VertexIdx>>::iterator inIt1;
+		map<Count, set<EdgeIdx>> temp = *it1;
+		map<Count, set<EdgeIdx>>::iterator inIt1;
 		for(inIt1 = temp.begin(); inIt1 != temp.end(); inIt1++)
 		{
 			cout << "---" << inIt1->first << " : "; 
-			set<VertexIdx> tset = inIt1->second;
-			set<VertexIdx>::iterator tsetIt;
+			set<EdgeIdx> tset = inIt1->second;
+			set<EdgeIdx>::iterator tsetIt;
 			for(tsetIt = tset.begin(); tsetIt != tset.end(); tsetIt++)
 			{
 				cout << *tsetIt << ", ";
@@ -245,14 +247,14 @@ int Graph :: printPQs()
 		ni++;
 	}
 
-	cout << "Printing nodeToOutdegMap -- vector <map<VertexIdx, Count>>\n";
+	cout << "Printing nodeToOutdegMap -- vector <map<EdgeIdx, Count>>\n";
 	ni = 0;
-    vector <map<VertexIdx, Count>>::iterator it2;
+    vector <map<EdgeIdx, Count>>::iterator it2;
     for(it2 = nodeToOutdegMap.begin(); it2 != nodeToOutdegMap.end(); it2++)
     {
     	cout << ni << "\n";
-    	map<VertexIdx, Count> temp = *it2;
-    	map<VertexIdx, Count>::iterator inIt1;
+    	map<EdgeIdx, Count> temp = *it2;
+    	map<EdgeIdx, Count>::iterator inIt1;
     	for(inIt1 = temp.begin(); inIt1 != temp.end(); inIt1++)
     	{
     		cout << " --- " << inIt1->first << " " << inIt1->second << "\n"; 
@@ -326,47 +328,36 @@ int Graph :: initializeDu(Count numVertices)
 }
 */
 
-int Graph :: addToPriorityQueue(VertexIdx u, VertexIdx headNode, Count headVal)
+int Graph :: addToPriorityQueue(VertexIdx u, VertexIdx headNode, Count headVal, EdgeIdx headEId)
 {
 	// we need to add/update headNode in the priority queue of u;
-	if(nodeToOutdegMap[u].find(headNode) != nodeToOutdegMap[u].end())
+	if(nodeToOutdegMap[u].find(headEId) != nodeToOutdegMap[u].end())
 	{
-		Count oldVal = nodeToOutdegMap[u][headNode];
-		nodeToOutdegMap[u][headNode] = headVal;
+		Count oldVal = nodeToOutdegMap[u][headEId];
+		nodeToOutdegMap[u][headEId] = headVal;
 
-		outdegToNodeMap[u][oldVal].erase(headNode);
+		outdegToNodeMap[u][oldVal].erase(headEId);
 		if(outdegToNodeMap[u][oldVal].size() < 1)
 		{
-			outdegToNodeMap[u].erase(oldVal);	
+			outdegToNodeMap[u].erase(oldVal);
 		}
-		outdegToNodeMap[u][headVal].insert(headNode);
+		outdegToNodeMap[u][headVal].insert(headEId);
 	}
 	else
 	{
-		nodeToOutdegMap[u][headNode] = headVal;
-		outdegToNodeMap[u][headVal].insert(headNode);
+		nodeToOutdegMap[u][headEId] = headVal;
+		outdegToNodeMap[u][headVal].insert(headEId);
 	}
 
 	return 0;
 }
 
 
-int Graph :: removeFromPriorityQueue(VertexIdx u, VertexIdx oldHeadNode)
+int Graph :: removeFromPriorityQueue(VertexIdx u, VertexIdx oldHeadNode, EdgeIdx oldHeadEId)
 {
-	// remove/decrement v in the priority queue of u;
-	Count oldVal = nodeToOutdegMap[u][oldHeadNode];			// gets the value of the degree of head node of eId...
-	Count newVal = oldVal - 1;
-	
-	// nodeToOutdegMap[u].erase(oldHeadNode);
-	nodeToOutdegMap[u][oldHeadNode] = newVal;
-	
-	outdegToNodeMap[u][oldVal].erase(oldHeadNode);
-	if(outdegToNodeMap[u][oldVal].size() < 1)
-	{
-		outdegToNodeMap[u].erase(oldVal);	
-	}
-	
-	outdegToNodeMap[u][newVal].insert(oldHeadNode);
+	Count oldVal = nodeToOutdegMap[u][oldHeadEId];
+	outdegToNodeMap[u][oldVal].erase(oldHeadEId);
+	nodeToOutdegMap[u].erase(oldHeadEId);
 
 	return 0;
 }
@@ -595,12 +586,12 @@ int Graph :: removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 
 
 // int Graph :: addDirectedEdge(eTupleUnWeighted e)
-int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v)
+int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx newHeadNode)
 {
 	// e = u,v directed
 	// VertexIdx u = get<0>(e);
 	// VertexIdx v = get<1>(e);
-	VertexIdx headNode = v;
+	VertexIdx headNode = newHeadNode;
 	headOfEdgeId[eId] = headNode;
 
 	// add u to in-neighbors of v
@@ -619,7 +610,7 @@ int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v)
 
 	// add v to priority queue out-neighbors of u;
 	// get the current value of d(v)
-	Count headNodeVal = nodeInDeg[headNode];
+	Count headNodeVal = nodeInDeg[headNode] + 1;
 
 	// update e in the priority queue of all u's except v with this v's value...
 	edgeVector e = edgeList[eId];
@@ -628,7 +619,7 @@ int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v)
 		VertexIdx u = e[i];
 		if(u != headNode)
 		{
-			addToPriorityQueue(u, headNode, headNodeVal);
+			addToPriorityQueue(u, headNode, headNodeVal, eId);
 		}
 	}
 
@@ -656,7 +647,7 @@ int Graph :: removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx oldHeadNode)
 		VertexIdx u = e[i];
 		if(u != oldHeadNode)
 		{
-			removeFromPriorityQueue(u, oldHeadNode);
+			removeFromPriorityQueue(u, oldHeadNode, eId);
 		}
 	}
 	return 0;
@@ -710,7 +701,19 @@ int Graph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int incOrDe
 				VertexIdx nbrNode = eNbr[i];
 				if(nbrNode != headNode)
 				{
-					addToPriorityQueue(nbrNode, headNode, newDuVal);		
+					// addToPriorityQueue(nbrNode, headNode, newDuVal);
+					InDegreeFromNodesView[nbrNode][headNode] = newDuVal;
+
+					// remove eNbr from NbrNode 
+					// add eNbr to NbrNode with new value... which is newDuVal;
+					Count oldVal = nodeToOutdegMap[nbrNode][usNextNeighbor];
+					outdegToNodeMap[nbrNode][oldVal].erase(usNextNeighbor);
+					if(outdegToNodeMap[nbrNode][oldVal].size() < 1)
+					{
+						outdegToNodeMap[nbrNode].erase(oldVal);	
+					}
+					outdegToNodeMap[nbrNode][newDuVal].insert(usNextNeighbor);
+					nodeToOutdegMap[nbrNode][usNextNeighbor] = newDuVal;
 				}
 			}
 			// VertexIdx nbrHeadNode = headOfEdgeId[usNextNeighbor];
@@ -849,30 +852,34 @@ EdgeIdx Graph :: getTightInNbr(VertexIdx u)
 }
 
 
-VertexIdx Graph :: getTightOutNbr(VertexIdx u)
+EdgeIdx Graph :: getTightOutNbr(VertexIdx u)
 {
-	VertexIdx t = getMaxOutNbr(u);
-	// degree of t in the view of u
-	// if the max neighbor has the degree that is very high than that of u... 
-	if((t != NullVertexIdx) && (nodeToOutdegMap[u][t] >= nodeInDeg[u] + eta/2))
+	EdgeIdx maxOutE = getMaxOutNbr(u);
+	if(maxOutE != NullEdgeIdx)
 	{
-		return t;
+		VertexIdx t = headOfEdgeId[maxOutE];
+		// degree of t in the view of u
+		// if the max neighbor has the degree that is very high than that of u... 
+		if((InDegreeFromNodesView[u][t] >= nodeInDeg[u] + eta/2))
+		{
+			return maxOutE;
+		}
 	}
-	return NullVertexIdx;
+	return NullEdgeIdx;
 }
 
 
 
-VertexIdx Graph :: getMaxOutNbr(VertexIdx u)
+EdgeIdx Graph :: getMaxOutNbr(VertexIdx u)
 {
 	// get the degToNode map of u
 	if(outdegToNodeMap[u].size() >= 1)
 	{
-		map<Count, set<VertexIdx>>::reverse_iterator rit = outdegToNodeMap[u].rbegin();
+		map<Count, set<EdgeIdx>>::reverse_iterator rit = outdegToNodeMap[u].rbegin();
 		Count maxVal = rit->first;
-		set<VertexIdx> maxValSet = rit->second;
-		set<VertexIdx>::iterator it = maxValSet.begin();
-		VertexIdx maxEle = *it;
+		set<EdgeIdx> maxValSet = rit->second;
+		set<EdgeIdx>::iterator it = maxValSet.begin();
+		EdgeIdx maxEle = *it;
 
 		return maxEle;
 	}
