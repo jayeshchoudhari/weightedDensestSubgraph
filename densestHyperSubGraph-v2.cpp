@@ -127,8 +127,8 @@ class Graph
 
 
 		Count getLabel(VertexIdx);
-		Count getMaxLabel();
-		Count getMaxDensity();
+		Count getMaxLabelNode();
+		Count getDensity();
 
 
 		int printPQs();
@@ -357,6 +357,10 @@ int Graph :: removeFromPriorityQueue(VertexIdx u, VertexIdx oldHeadNode, EdgeIdx
 {
 	Count oldVal = nodeToOutdegMap[u][oldHeadEId];
 	outdegToNodeMap[u][oldVal].erase(oldHeadEId);
+	if(outdegToNodeMap[u][oldVal].size() < 1)
+	{
+		outdegToNodeMap[u].erase(oldVal);
+	}
 	nodeToOutdegMap[u].erase(oldHeadEId);
 
 	return 0;
@@ -925,7 +929,7 @@ int Graph :: removeEdgeFromMap(edgeVector e)
 }
 
 
-Count Graph :: getMaxDensity()
+Count Graph :: getDensity()
 {
 	map<Count, set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
 	Count currMaxDensityValue = (labelsIt->first)*(1-epsVal);
@@ -937,7 +941,7 @@ Count Graph :: getLabel(VertexIdx u)
 	return ReverseLabels[u];
 }
 
-Count Graph :: getMaxLabel()
+Count Graph :: getMaxLabelNode()
 {
 	map<Count, set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
 	Count maxVal = rit->first;
@@ -1089,6 +1093,8 @@ int main()
 							cout << "Edge does not exists to delete...\n";
 						}
 					}
+
+					cout << "\nCurr Max Density Val = " << G.getDensity() << endl;
 				}
 				else
 				{
