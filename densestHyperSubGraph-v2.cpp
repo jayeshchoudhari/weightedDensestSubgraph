@@ -130,6 +130,10 @@ class Graph
 		Count getMaxLabel();
 		double getDensity();
 
+		pair<vector<VertexIdx>, revItMapCountSetVertices> returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D);
+		vector<VertexIdx> getDensestSubgraph(double rgamma);
+		vector<VertexIdx> querySubgraph(double D_hat);
+
 
 		int printPQs();
 };
@@ -951,14 +955,100 @@ Count Graph :: getMaxLabel()
 {
 	map<Count, set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
 	Count maxVal = rit->first;
-
+	/*
 	set<VertexIdx> maxValSet = rit->second;
 	set<VertexIdx>::iterator it = maxValSet.begin();
 	VertexIdx maxEle = *it;
-
+	*/
 	return maxVal;
 }
 
+pair<vector<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D)
+{
+	vector<VertexIdx> A, B;
+    map<Count, set<VertexIdx>>::reverse_iterator preservedRit;
+    map<Count, set<VertexIdx>>::reverse_iterator rit;
+
+	for(rit = startIt; rit != Labels.rend(); ++rit)
+	{
+		preservedRit = rit;
+		Count densityVal = rit->first;
+		if(densityVal >= D)
+		{
+			set<VertexIdx> dvertices = rit->second;
+			set<VertexIdx> :: iterator dvIt;
+			for(dvIt = dvertices.begin(); dvIt != dvertices.end(); ++dvIt)
+			{
+				B.push_back(*dvIt);
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	pair rP = make_pair(B, preservedRit);
+    return rP;
+}
+
+
+vector<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
+{
+	double D = getMaxLabel();
+	vector<VertexIdx> A, B;
+	unsigned int ASize, BSize;
+	double sizeRatio;
+
+	revItMapCountSetVertices rit;
+
+	rit = Labels.rbegin();
+	pair<vector<VertexIdx>, revItMapCountSetVertices> AElementsPair = returnDensitySatisfiedNodes(rit, D);
+	A = AElementsPair.first;
+	rit = AElementsPair.second;
+
+	D = D-eta;
+	B = A;
+	pair<vector<VertexIdx>, revItMapCountSetVertices> newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
+	vector<VertexIdx> newElementsToB = newElementsToBPair.first;
+	rit = newElementsToBPair.second;
+
+	for(unsigned int i = 0; i < newElementsToB.size(); i++)
+	{
+		B.push_back(newElementsToB[i]);
+	}
+
+	BSize = B.size();
+	ASize = A.size();
+	sizeRatio = (BSize * 1.0)/ASize;
+
+	while(sizeRatio > 1 + rgamma)
+	{
+		A = B;
+		D = D - eta;
+		newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
+		newElementsToB = newElementsToBPair.first;
+		rit = newElementsToBPair.second;
+
+		for(unsigned int i = 0; i < newElementsToB.size(); i++)
+		{
+			B.push_back(newElementsToB[i]);
+		}
+
+		BSize = B.size();
+		ASize = A.size();
+		sizeRatio = (BSize * 1.0)/ASize;
+	}
+
+	return B;
+}
+
+
+vector<VertexIdx> Graph :: querySubgraph(double D_hat)
+{
+	double rgamma = sqrt(2 * eta * log(nVertices) / D_hat);
+	return getDensestSubgraph(rgamma);
+}
 
 
 // utilities...
