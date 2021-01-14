@@ -2,39 +2,26 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-// using namespace rwNamespace;
 
 class Graph 
 {
     private:
         Count nVertices; 								//number of vertices in the graph
         Count nEdges;     								//number of edges in this list
- 
-        vector <VertexIdx> srcs;      					//array of source vertices
-        vector <VertexIdx> dsts;      					//array of destination vertices
-
+ 		float eta = 1;
         double epsVal;
-        
-        vector <VertexIdx> nodeList;
-        vector <vector<VertexIdx>> adjList;				//adj List
-        vector <vector<Weight>> adjMatrix;				//adj Matrix
-        vector <vector<Weight>> scaledAdjMatrix;		//scaled adj Matrix
-        vector <vector<Weight>> sparsedAdjMatrix;		//sparsed adj Matrix
 
         multimap<vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        vector <vector<VertexIdx>> edgeList;
+
+        // above could be static members shared among all the instances of the Graph...
+        // each instance for a guess of density...
+		
         unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
 
-        vector <vector<VertexIdx>> edgeList;
         unordered_map <VertexIdx, Count> nodeInDeg;
-        map <Count, set<VertexIdx>> reverseNodeInDeg;
 
-        Count maxInDeg;
-
-        vector <Count> du;
-        // vector <vector<Count>> InNbrs;					//List of InNbrs
-        vector <set<EdgeIdx>> InNbrs;						//List of InNbrs
-        vector <priority_queue<Count> > OutNbrs;
-        vector <Count> nextNeighbor;
+        vector <set<EdgeIdx>> InNbrs;							//List of InNbrs
 
         // ****** FOR MAINTAINING THE VISITNEXT DATA-STRUCTURE ********
         // list of neighbors for each node...
@@ -56,31 +43,19 @@ class Graph
         vector <map<Count, set<EdgeIdx>> > outdegToNodeMap;
         vector <map<EdgeIdx, Count>> nodeToOutdegMap;
         vector <unordered_map<VertexIdx, Count>> InDegreeFromNodesView;
-        // *************************************************************
-
+        // ********************************************************************************
 
         // ********** TO MAINTAIN LABELS/NODES WITH HIGH INDEGREE *************** 
         map<Count, set<VertexIdx>> Labels;				// this is the data-structure that keeps track of top elements...
         map<VertexIdx, Count> ReverseLabels;			// this is the data-structure that keeps track of top elements...
-        // *************************************************************
-
-        Count maxLabel;					//Node with the max Indegree
-
-
-        float eta = 1;
+        // **********************************************************************
 
     public:
 
 		// Graph(int nv, int ne);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
 
 		Graph(int nv);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
-
     	// Graph(vector <VertexIdx> &v, vector<edgeVector> &edList);		//takes in list/vector of nodes and vector of pairs which are edges (undirected)
-
-    	int printGraphDetails();
-
-  		// int CountG3s();
-		// eTupleUnWeighted lStepRandomWalk(Count, VertexIdx);
 
 		Count getNumVertices();
 		Count getNumEdges();
@@ -90,15 +65,13 @@ class Graph
         // //For debugging.  Not for serialization.
         // void print(FILE *f = stdout) const;
 
-		// int initializeDu(Count n);
-
-		// int addDirectedEdge(eTupleUnWeighted);
 		int addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
 		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx headNode);
 		int flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode);
-		// int addToPriorityQueue(VertexIdx, VertexIdx, Count);
+		
 		int addToPriorityQueue(VertexIdx, VertexIdx, Count, EdgeIdx);
 		int removeFromPriorityQueue(VertexIdx, VertexIdx, EdgeIdx);
+		
 		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec);
 
 		int incrementDu(VertexIdx);
@@ -125,7 +98,6 @@ class Graph
 		int removeEdgeFromMap(edgeVector e);
 		int addEdgeToEdgeList(edgeVector e);
 
-
 		Count getLabel(VertexIdx);
 		Count getMaxLabel();
 		double getDensity();
@@ -135,21 +107,21 @@ class Graph
 		vector<VertexIdx> querySubgraph(double D_hat);
 
 
-		int printPQs();
+		int showPQs();
 };
 
 // Constructor to initialize the graph...
 // Graph :: Graph(int nv, int ne)
-Graph :: Graph(int nv)
+Graph :: Graph(Count nv)
 {
 	nVertices = nv;
 	epsVal = 0.1;
-	OutNbrs.resize(nv);
-	// du.resize(nv);
+	// OutNbrs.resize(nv);
+
 	outdegToNodeMap.resize(nv);
 	nodeToOutdegMap.resize(nv);
 	InDegreeFromNodesView.resize(nv);
-	// nextNeighbor.resize(nv);
+
 	InNbrs.resize(nv);
 
 	// to maintain visitNext structure... 
@@ -161,6 +133,7 @@ Graph :: Graph(int nv)
 
 	// initialize adj matrix to 0...
 	// each entry would be positive > 0 if an edge has some positive weight...
+	/*
 	for(Count i = 0; i < nv; i++)
 	{
 		VertexIdx v = i;
@@ -174,60 +147,13 @@ Graph :: Graph(int nv)
 		adjMatrix.push_back(eachRow);
 		scaledAdjMatrix.push_back(eachRow);
 		sparsedAdjMatrix.push_back(eachRow);
-		// InNbrs.push_back(eachRow);
-		// nextNeighbor[i] = 0;
 	}
-
 	maxInDeg = 0;
+	*/
 }
 
-/*
-Graph :: Graph(vector <VertexIdx> &v, vector<edgeVector> &e)
-// Graph::Graph(vector <VertexIdx> &v, vector<eTupleUnWeighted> &edList)
-{
-	nVertices = v.size();
-	nEdges = e.size();
 
-	// std::cout << "num of nodes = " << nVertices << " num of edges = " << nEdges << "\n";
-
-	vector<VertexIdx>::iterator vIt;
-
-	for(vIt = v.begin(); vIt != v.end(); vIt++)
-	{
-		nodeList.push_back(*vIt);
-	}
-	
-	// std::cout << "got vertices \n"; 
-
-	adjList.resize(nVertices);
-
-	vector<edgeVector>::iterator edgeIt;
-
-	// for(const eTupleUnWeighted &edgeIt : e)
-	for(edgeIt = e.begin(); edgeIt != e.end(); edgeIt++)
-	{
-		VertexIdx src = get<0>(*edgeIt);
-		VertexIdx dest = get<1>(*edgeIt);
-
-		// populate adjacency list
-		adjList[src].push_back(dest);
-		adjList[dest].push_back(src);
-
-		// populate list of edges
-		vector <VertexIdx> tempEdge;
-		tempEdge.push_back(src);
-		tempEdge.push_back(dest);
-		edgeList.push_back(tempEdge);
-
-		// populate node degress
-		nodeInDeg[src] += 1;
-		nodeInDeg[dest] += 1;
-	}
-}
-*/
-
-
-int Graph :: printPQs()
+int Graph :: showPQs()
 {
 	VertexIdx ni = 0;
 	cout << "Printing outdegToNodeMap -- vector <map<Count, set<EdgeIdx>>>\n"; 
@@ -282,53 +208,10 @@ Count Graph :: getNumVertices()
 	return nVertices;
 }
 
+/*
 Count Graph :: getNumEdges()
 {
 	return nEdges;
-}
-
-int Graph :: printGraphDetails()
-{
-	std::cout << "num of nodes = " << nVertices << " num of edges = " << nEdges << "\n";
-
-	unordered_map<VertexIdx, Count>::iterator nIt;
-	for(nIt = nodeInDeg.begin(); nIt != nodeInDeg.end(); nIt++)
-	{
-		std::cout << nIt->first << " : " << nIt->second << "\n";
-	}
-
-	
-	// Print graph  //
-	for (int i = 0; i < nVertices; i++)
-	{
-		// print current vertex number
-		cout << i << " --> ";
-
-		// print all neighboring vertices of vertex i
-		for (int v : adjList[i])
-			cout << v << " ";
-		cout << endl;
-	}
-	// 
-	return 0;
-}
-
-/*
-int Graph :: checkEdgeExistence(e)
-{
-	// check in the adjacency list... if the pair exists....
-	return flag;
-}
-*/
-
-/*
-int Graph :: initializeDu(Count numVertices)
-{
-	for(VertexIdx i = 0; i < numVertices; i++)
-	{
-		du[i] = 0;
-	}
-	return 0;
 }
 */
 
@@ -1146,7 +1029,6 @@ int main()
 
 				if(tempVec.size() >= 2)
 				{
-					
 					if(insDel == '+')
 					{
 						//pop_back year val... the last index....
