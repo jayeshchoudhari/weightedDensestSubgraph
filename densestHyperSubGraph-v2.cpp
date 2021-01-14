@@ -268,7 +268,10 @@ int Graph :: insertEdge(edgeVector e, EdgeIdx eId)
 	w = getMinDegreeVertexInE(eId);
 	lastEId = eId;
 
+	// cout << nodeInDeg[w] << " headNode indegree during addition\n";
 	addDirectedEdgeToInOutNbrs(eId, w);
+
+	// cout << InNbrs[w].size() << " headNode innbrs size during addition\n";
 
 	// headOfEdgeId[eId] = w;
 
@@ -309,8 +312,9 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 	EdgeIdx ePrime, lastEId;
 
 	VertexIdx headNode = headOfEdgeId[eId];
-	cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
-	cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
+
+	// cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
+	// cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
 	
 	// remove e from the InNbrs of headNode...
 	removeDirectedEdgeFromInOutNbrs(eId, headNode);
@@ -335,14 +339,24 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 	w = headNode;
 	ePrime = getTightOutNbr(w);
 	
+	map<EdgeIdx, int> flippedEdges;
+
 	while(ePrime != NullEdgeIdx)
 	{
 		wPrime = headOfEdgeId[ePrime];
 		// eTupleUnWeighted eFlip(w, wPrime);
-		flipDirectedEdge(ePrime, wPrime, w); 	// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
-		w = wPrime;
-		lastEId = ePrime;
-		ePrime = getTightOutNbr(w);
+		if(flippedEdges.find(ePrime) == flippedEdges.end())
+		{	
+			flipDirectedEdge(ePrime, wPrime, w); 	// flipDirctedEdge(eId, oldHeadNode, newHeadNode)
+			w = wPrime;
+			lastEId = ePrime;
+			ePrime = getTightOutNbr(w);
+			flippedEdges[ePrime] = 1;
+		}
+		else
+		{
+			break;
+		}
 	}
 
 	decrementDu(w);
@@ -491,7 +505,8 @@ int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx newHeadNode)
 
 	// add v to priority queue out-neighbors of u;
 	// get the current value of d(v)
-	Count headNodeVal = nodeInDeg[headNode] + 1;
+	// Count headNodeVal = nodeInDeg[headNode] + 1;
+	Count headNodeVal = nodeInDeg[headNode];
 
 	// update e in the priority queue of all u's except v with this v's value...
 	edgeVector e = edgeList[eId];
@@ -941,7 +956,8 @@ vector<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
 vector<VertexIdx> Graph :: querySubgraph(double D_hat)
 {
 	double rgamma = sqrt(2 * eta * log(nVertices) / D_hat);
-	return getDensestSubgraph(rgamma);
+	cout << "rGamma = " << rgamma << endl;
+	return getDensestSubgraph(1);
 }
 
 
@@ -984,9 +1000,12 @@ int main()
 	// after inserting each edge the graph is updated...
 
 	//read each line from file...
+	// string graphFileName = "dblp.theory.hg.dyn.txt";
+	string graphFileName = "dblp.theory.hg.dyn.10.txt";
+	// string graphFileName = "dblp.theory.hg.dyn.15.txt";
 	// string graphFileName = "dblp.theory.hypergraph.txt";
 	// string graphFileName = "sampleGraph-1.txt";
-	string graphFileName = "sample-hypergraph-1.txt";
+	// string graphFileName = "sample-hypergraph-1.txt";
 	ifstream graphFile;
 
 	string line;
@@ -1045,14 +1064,15 @@ int main()
 
 				edgeVector tempVec;
 
-				while(ss >> eEle)
-				{
-					tempVec.push_back(eEle);
-				}
 
-				if(tempVec.size() >= 2)
+				if(insDel == '+')
 				{
-					if(insDel == '+')
+					while(ss >> eEle)
+					{
+						tempVec.push_back(eEle);
+					}
+
+					if(tempVec.size() >= 2)
 					{
 						//pop_back year val... the last index....
 						Count yearVal = tempVec[tempVec.size()-1]; 	// last element is the year/timestamp value...
@@ -1065,8 +1085,9 @@ int main()
 							G.setEdgeId(currentEdge, edgeId);
 							// edgeMap[currentEdge] = edgeId;
 							G.addEdgeToEdgeList(currentEdge);
-							cout << "Add the edge -- " << edgeId << " -- " << printEdgeVector(currentEdge);
-
+							
+							// cout << "Add the edge -- " << edgeId << " -- "; 
+							// printEdgeVector(currentEdge);
 							G.insertEdge(currentEdge, edgeId);
 
 							edgeId += 1;
@@ -1076,30 +1097,42 @@ int main()
 							cout << "Edge has less than 2 end points...\n";
 						}
 					}
-					else if(insDel == '-')
+					else
 					{
-						currentEdge = tempVec;
-						// if(edgeMap.find(currentEdge) != edgeMap.end())
-						EdgeIdx delEdgeId = G.checkEdgeExistence(currentEdge);
-						if(delEdgeId != NullEdgeIdx)
-						{
-							// G.getEdgeId(currentEdge);
-							cout << "Deleting edge " << delEdgeId << " -- " << printEdgeVector(currentEdge);
-							G.deleteEdge(currentEdge, delEdgeId);
-							G.removeEdgeFromMap(currentEdge);
-							// edgeMap.erase(currentEdge);
-						}
-						else
-						{
-							cout << "Edge does not exists to delete...\n";
-						}
+						cout << "Edge has less than 2 end points...\n";
 					}
-
-					cout << "\nCurr Max Density Val = " << G.getDensity() << endl;
 				}
-				else
+				else if(insDel == '-')
 				{
-					cout << "Edge has less than 2 end points...\n"; 
+					while(ss >> eEle)
+					{
+						tempVec.push_back(eEle);
+					}
+					currentEdge = tempVec;
+					// if(edgeMap.find(currentEdge) != edgeMap.end())
+					EdgeIdx delEdgeId = G.checkEdgeExistence(currentEdge);
+					if(delEdgeId != NullEdgeIdx)
+					{
+						// G.getEdgeId(currentEdge);
+						// cout << "Deleting edge " << delEdgeId << " -- "; 
+						// printEdgeVector(currentEdge);
+						G.deleteEdge(currentEdge, delEdgeId);
+						G.removeEdgeFromMap(currentEdge);
+						// edgeMap.erase(currentEdge);
+					}
+					else
+					{
+						cout << "Edge does not exists to delete...\n";
+					}
+				}
+				else if(insDel == '=')
+				{
+					Count yearLabel;
+					ss >> yearLabel;
+					cout << "\nMax Density Val for " << yearLabel << " : " << G.getDensity() << endl;
+					cout << "\nMax Label Val for " << yearLabel << " : " << G.getMaxLabel() << endl;
+					vector<VertexIdx> denseSubgraph = G.querySubgraph(2.5);
+					cout << "\nSize " << yearLabel << ":" << denseSubgraph.size() << endl;
 				}
 
 				// binomial sampling to scale the weight....
@@ -1114,9 +1147,7 @@ int main()
 
 				}
 				*/
-
 			}
-			
 		}
 		else
 		{
