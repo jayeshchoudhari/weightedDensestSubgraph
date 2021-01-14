@@ -19,7 +19,7 @@ class Graph
 		
         unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
 
-        unordered_map <VertexIdx, Count> nodeInDeg;
+        map <VertexIdx, Count> nodeInDeg;
 
         vector <set<EdgeIdx>> InNbrs;							//List of InNbrs
 
@@ -54,7 +54,7 @@ class Graph
 
 		// Graph(int nv, int ne);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
 
-		Graph(int nv);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
+		Graph(Count nv);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
     	// Graph(vector <VertexIdx> &v, vector<edgeVector> &edList);		//takes in list/vector of nodes and vector of pairs which are edges (undirected)
 
 		Count getNumVertices();
@@ -77,7 +77,8 @@ class Graph
 		int incrementDu(VertexIdx);
 		int decrementDu(VertexIdx);
 
-		EdgeIdx getTightInNbr(VertexIdx);
+		pair<VertexIdx, EdgeIdx> getTightInNbr(VertexIdx);
+		VertexIdx getMinDegreeVertexInE(EdgeIdx eId);
 		EdgeIdx getTightOutNbr(VertexIdx);
 		EdgeIdx getMaxOutNbr(VertexIdx u);
 
@@ -264,44 +265,32 @@ int Graph :: insertEdge(edgeVector e, EdgeIdx eId)
 	VertexIdx w, wPrime;
 	EdgeIdx ePrime, lastEId;
 
-	// get indegree of all the nodes...
-	// and then find min of it...
-	VertexIdx minDegVertex = e[0];
-	Count minDegree = nodeInDeg[e[0]];
-
-	for(unsigned int i = 0; i < e.size(); i++)
-	{
-		if(nodeInDeg[e[i]] < minDegree)
-		{
-			minDegVertex = e[i];
-			minDegree = nodeInDeg[e[i]];
-		}
-	}
-
-	w = minDegVertex;
+	w = getMinDegreeVertexInE(eId);
 	lastEId = eId;
 
 	addDirectedEdgeToInOutNbrs(eId, w);
 
 	// headOfEdgeId[eId] = w;
 
-	// check if this results into making some neighboring edge of w tight... 
-	ePrime = getTightInNbr(w);		// tight edge... -- head of this edge give tight In-neighbor node...
+	// check if this results into making some neighboring edge of w tight...
+	pair<VertexIdx, EdgeIdx> minNbrNodeEdgePair = getTightInNbr(w);
+	ePrime = minNbrNodeEdgePair.second;		// tight edge... -- head of this edge give tight In-neighbor node...
 	// i.e. an edge with a headNode whose degree is very less as compared to that of w....
 	// while(wPrime != -1)
 	while(ePrime != -1)
 	{
-		wPrime = headOfEdgeId[ePrime];
+		wPrime = minNbrNodeEdgePair.first;
 		// wPrime's in-deg is very less...
 		// so flip the edge to wPrime..?
 
 		// eTupleUnWeighted eFlip(wPrime, w);
-		flipDirectedEdge(ePrime, wPrime, w);		// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
+		flipDirectedEdge(ePrime, w, wPrime);		// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
 		// so now wPrime is settled -- i.e. we have increased its indegree 
 		// now we need to check if any in-neighbor of wPrime, violates the condition or has very less indegree...
 		w = wPrime;
 		lastEId = ePrime;
-		ePrime = getTightInNbr(w);
+		minNbrNodeEdgePair = getTightInNbr(w);
+		ePrime = minNbrNodeEdgePair.second;
 	}
 
 	incrementDu(w);
@@ -320,6 +309,8 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 	EdgeIdx ePrime, lastEId;
 
 	VertexIdx headNode = headOfEdgeId[eId];
+	cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
+	cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
 	
 	// remove e from the InNbrs of headNode...
 	removeDirectedEdgeFromInOutNbrs(eId, headNode);
@@ -340,7 +331,6 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 		w = u;
 	}
 	*/
-
 	lastEId = eId;
 	w = headNode;
 	ePrime = getTightOutNbr(w);
@@ -349,7 +339,7 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 	{
 		wPrime = headOfEdgeId[ePrime];
 		// eTupleUnWeighted eFlip(w, wPrime);
-		flipDirectedEdge(ePrime, w, wPrime); 	// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
+		flipDirectedEdge(ePrime, wPrime, w); 	// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
 		w = wPrime;
 		lastEId = ePrime;
 		ePrime = getTightOutNbr(w);
@@ -467,7 +457,7 @@ int Graph :: removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 		// removing eId from the in-neighbors of u....
 		// Remove eId using the iterator of eId, otherwise it is linear time... 
 		// we want constant time...
-		listOfNeighbors[headNode].erase(mapToNeighborsList[headNode][eId]);		
+		listOfNeighbors[headNode].erase(mapToNeighborsList[headNode][eId]);
 		// remove element and its address from the map as well
 		mapToNeighborsList[headNode].erase(eId);
 	}
@@ -646,7 +636,7 @@ int Graph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int incOrDe
 int Graph :: incrementDu(VertexIdx headNode)
 {
 	updateLabels(headNode, 1);
-	Count oldVal = nodeInDeg[headNode];
+	// Count oldVal = nodeInDeg[headNode];
 	nodeInDeg[headNode] += 1;
 
 	Count newDuVal = nodeInDeg[headNode];
@@ -660,7 +650,7 @@ int Graph :: incrementDu(VertexIdx headNode)
 int Graph :: decrementDu(VertexIdx oldHeadNode)
 {
 	updateLabels(oldHeadNode, -1);
-	Count oldVal = nodeInDeg[oldHeadNode];
+	// Count oldVal = nodeInDeg[oldHeadNode];
 	nodeInDeg[oldHeadNode] -= 1;
 	Count newDuVal = nodeInDeg[oldHeadNode];
 
@@ -687,10 +677,29 @@ int Graph :: updateLabels(VertexIdx u, Count changeVal)
 	return 0;
 }
 
-EdgeIdx Graph :: getTightInNbr(VertexIdx u)
+VertexIdx Graph :: getMinDegreeVertexInE(EdgeIdx eId)
+{
+	edgeVector e = edgeList[eId];
+	VertexIdx minDegVertex = e[0];
+	Count minDegree = nodeInDeg[e[0]];
+
+	for(unsigned int i = 1; i < e.size(); i++)
+	{
+		if(nodeInDeg[e[i]] < minDegree)
+		{
+			minDegVertex = e[i];
+			minDegree = nodeInDeg[e[i]];
+		}
+	}
+	return minDegVertex;
+}
+
+
+pair<VertexIdx, EdgeIdx> Graph :: getTightInNbr(VertexIdx u)
 {
 	// VertexIdx neighborToReturn = NullVertexIdx;
 	EdgeIdx neighborEdgeIdToReturn = NullEdgeIdx;
+	VertexIdx neighborNodeIdToReturn = NullVertexIdx;
 
 	list<EdgeIdx> :: iterator updateItInc;
 
@@ -714,7 +723,6 @@ EdgeIdx Graph :: getTightInNbr(VertexIdx u)
 		{
 			// increase the counter...
 			start++;
-	
 			// increment the pointer position...
 			updateItInc++;
 
@@ -728,10 +736,13 @@ EdgeIdx Graph :: getTightInNbr(VertexIdx u)
 			touchedNeighbors[usNextNeighborEdgeId] = 1;
 
 			// check if this current neighbor satisfies the tight in-neighbor condition...
-			VertexIdx edgeHeadNode = headOfEdgeId[usNextNeighborEdgeId]; 
-			if(nodeInDeg[edgeHeadNode] <= nodeInDeg[u] - eta/2)
+			// VertexIdx edgeHeadNode = headOfEdgeId[usNextNeighborEdgeId];
+			VertexIdx minDegVertexInNbrE = getMinDegreeVertexInE(usNextNeighborEdgeId);
+
+			if(nodeInDeg[minDegVertexInNbrE] <= nodeInDeg[u] - eta/2)
 			{
 				neighborEdgeIdToReturn = usNextNeighborEdgeId;
+				neighborNodeIdToReturn = minDegVertexInNbrE;
 				break;
 			}
 		}
@@ -745,7 +756,7 @@ EdgeIdx Graph :: getTightInNbr(VertexIdx u)
 	// update the position of the nextPosition Iterator... 
 	nextPositionIteratorTightInNbr[u] = updateItInc;
 
-	return neighborEdgeIdToReturn;
+	return make_pair(neighborNodeIdToReturn, neighborEdgeIdToReturn);
 }
 
 
@@ -949,6 +960,17 @@ int sampleFromBinomial(int wt, double p)
 }
 
 
+int printEdgeVector(edgeVector e)
+{
+	for(unsigned int i = 0; i < e.size(); i++)
+	{
+		cout << e[i] << " ";
+	}
+	cout << "\n";
+
+	return 0;
+}
+
 int main()
 {
 	// std::vector <VertexIdx> v = {0,1,2,3};
@@ -963,7 +985,8 @@ int main()
 
 	//read each line from file...
 	// string graphFileName = "dblp.theory.hypergraph.txt";
-	string graphFileName = "sampleGraph-1.txt";
+	// string graphFileName = "sampleGraph-1.txt";
+	string graphFileName = "sample-hypergraph-1.txt";
 	ifstream graphFile;
 
 	string line;
@@ -1042,7 +1065,7 @@ int main()
 							G.setEdgeId(currentEdge, edgeId);
 							// edgeMap[currentEdge] = edgeId;
 							G.addEdgeToEdgeList(currentEdge);
-							cout << "Add the edge -- " << edgeId << endl;
+							cout << "Add the edge -- " << edgeId << " -- " << printEdgeVector(currentEdge);
 
 							G.insertEdge(currentEdge, edgeId);
 
@@ -1061,7 +1084,7 @@ int main()
 						if(delEdgeId != NullEdgeIdx)
 						{
 							// G.getEdgeId(currentEdge);
-							cout << "Deleting edge " << delEdgeId << endl;
+							cout << "Deleting edge " << delEdgeId << " -- " << printEdgeVector(currentEdge);
 							G.deleteEdge(currentEdge, delEdgeId);
 							G.removeEdgeFromMap(currentEdge);
 							// edgeMap.erase(currentEdge);
