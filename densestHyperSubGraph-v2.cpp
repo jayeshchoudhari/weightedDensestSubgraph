@@ -8,7 +8,7 @@ class Graph
     private:
         Count nVertices; 								//number of vertices in the graph
         Count nEdges;     								//number of edges in this list
- 		float eta = 1;
+ 		double eta = 3;
         double epsVal;
 
         multimap<vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
@@ -54,7 +54,7 @@ class Graph
 
 		// Graph(int nv, int ne);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
 
-		Graph(Count nv);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
+		Graph(Count nv, double decEta);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
     	// Graph(vector <VertexIdx> &v, vector<edgeVector> &edList);		//takes in list/vector of nodes and vector of pairs which are edges (undirected)
 
 		Count getNumVertices();
@@ -103,20 +103,27 @@ class Graph
 		Count getMaxLabel();
 		double getDensity();
 
-		pair<vector<VertexIdx>, revItMapCountSetVertices> returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D);
-		vector<VertexIdx> getDensestSubgraph(double rgamma);
-		vector<VertexIdx> querySubgraph(double D_hat);
+		pair<set<VertexIdx>, revItMapCountSetVertices> returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D);
+		set<VertexIdx> getDensestSubgraph(double rgamma);
+		set<VertexIdx> querySubgraph(double D_hat);
+		Count getMaxIndegree();
+		int checkEdgeAssignment();
 
+		double getDensityOfInducedSubgraph(set<VertexIdx>);
+		pair<double, unsigned int> getMaxPartitionDensity();
 
 		int showPQs();
 };
 
 // Constructor to initialize the graph...
 // Graph :: Graph(int nv, int ne)
-Graph :: Graph(Count nv)
+Graph :: Graph(Count nv, double decEta)
 {
 	nVertices = nv;
 	epsVal = 0.1;
+
+	eta = decEta;
+
 	// OutNbrs.resize(nv);
 
 	outdegToNodeMap.resize(nv);
@@ -313,11 +320,12 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 
 	VertexIdx headNode = headOfEdgeId[eId];
 
-	// cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
-	// cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
+	cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
+	cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
 	
 	// remove e from the InNbrs of headNode...
 	removeDirectedEdgeFromInOutNbrs(eId, headNode);
+	cout << nodeInDeg[headNode] << "after deletion headNode indegree before deletion -- shouldnt change yet..\n";
 
 	// check if u belongs to in-neighbors of v
 	
@@ -345,18 +353,18 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 	{
 		wPrime = headOfEdgeId[ePrime];
 		// eTupleUnWeighted eFlip(w, wPrime);
-		if(flippedEdges.find(ePrime) == flippedEdges.end())
-		{	
-			flipDirectedEdge(ePrime, wPrime, w); 	// flipDirctedEdge(eId, oldHeadNode, newHeadNode)
-			w = wPrime;
-			lastEId = ePrime;
-			ePrime = getTightOutNbr(w);
-			flippedEdges[ePrime] = 1;
-		}
-		else
-		{
-			break;
-		}
+		// if(flippedEdges.find(ePrime) == flippedEdges.end())
+		// {	
+		flipDirectedEdge(ePrime, wPrime, w); 	// flipDirctedEdge(eId, oldHeadNode, newHeadNode)
+		w = wPrime;
+		lastEId = ePrime;
+		ePrime = getTightOutNbr(w);
+		flippedEdges[ePrime] = 1;
+		// }
+		// else
+		// {
+		// 	break;
+		// }
 	}
 
 	decrementDu(w);
@@ -516,6 +524,7 @@ int Graph :: addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx newHeadNode)
 		if(u != headNode)
 		{
 			addToPriorityQueue(u, headNode, headNodeVal, eId);
+			InDegreeFromNodesView[u][headNode] = headNodeVal;
 		}
 	}
 
@@ -581,6 +590,11 @@ int Graph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int incOrDe
 	{
 		updateItInc = nextPositionIteratorDec[headNode];
 	}
+
+	if(updateItInc == listOfNeighbors[headNode].end())
+    {
+    	updateItInc = listOfNeighbors[headNode].begin();
+    }
 
 	while(start < maxNumNeighborsToUpdate)
 	{
@@ -754,7 +768,10 @@ pair<VertexIdx, EdgeIdx> Graph :: getTightInNbr(VertexIdx u)
 			// VertexIdx edgeHeadNode = headOfEdgeId[usNextNeighborEdgeId];
 			VertexIdx minDegVertexInNbrE = getMinDegreeVertexInE(usNextNeighborEdgeId);
 
-			if(nodeInDeg[minDegVertexInNbrE] <= nodeInDeg[u] - eta/2)
+			Count minNodeInDeg = nodeInDeg[minDegVertexInNbrE];
+			Count newHeadNodeInDeg = nodeInDeg[u];
+			
+			if(minNodeInDeg <= newHeadNodeInDeg - eta/2)
 			{
 				neighborEdgeIdToReturn = usNextNeighborEdgeId;
 				neighborNodeIdToReturn = minDegVertexInNbrE;
@@ -782,8 +799,10 @@ EdgeIdx Graph :: getTightOutNbr(VertexIdx u)
 	{
 		VertexIdx t = headOfEdgeId[maxOutE];
 		// degree of t in the view of u
-		// if the max neighbor has the degree that is very high than that of u... 
-		if((InDegreeFromNodesView[u][t] >= nodeInDeg[u] + eta/2))
+		// if the max neighbor has the degree that is very high than that of u...
+		float threshold = nodeInDeg[u] + eta/2;
+		if((InDegreeFromNodesView[u][t] >= threshold))
+		// if((nodeInDeg[t] >= nodeInDeg[u] + eta/2))
 		{
 			return maxOutE;
 		}
@@ -872,9 +891,9 @@ Count Graph :: getMaxLabel()
 	return maxVal;
 }
 
-pair<vector<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D)
+pair<set<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D)
 {
-	vector<VertexIdx> A, B;
+	set<VertexIdx> B;
     map<Count, set<VertexIdx>>::reverse_iterator preservedRit;
     map<Count, set<VertexIdx>>::reverse_iterator rit;
 
@@ -888,7 +907,7 @@ pair<vector<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfie
 			set<VertexIdx> :: iterator dvIt;
 			for(dvIt = dvertices.begin(); dvIt != dvertices.end(); ++dvIt)
 			{
-				B.push_back(*dvIt);
+				B.insert(*dvIt);
 			}
 		}
 		else
@@ -897,35 +916,61 @@ pair<vector<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfie
 		}
 	}
 
+	if(rit == Labels.rend())
+	{
+		preservedRit = rit;
+	}
+
 	pair rP = make_pair(B, preservedRit);
     return rP;
 }
 
 
-vector<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
+set<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
 {
+	Count decrementVal = 1;
+
 	double D = getMaxLabel();
-	vector<VertexIdx> A, B;
+	set<VertexIdx> A, B;
 	unsigned int ASize, BSize;
 	double sizeRatio;
 
 	revItMapCountSetVertices rit;
 
 	rit = Labels.rbegin();
-	pair<vector<VertexIdx>, revItMapCountSetVertices> AElementsPair = returnDensitySatisfiedNodes(rit, D);
+	pair<set<VertexIdx>, revItMapCountSetVertices> AElementsPair = returnDensitySatisfiedNodes(rit, D);
 	A = AElementsPair.first;
-	rit = AElementsPair.second;
 
-	D = D-eta;
+	if(AElementsPair.second != Labels.rend())
+	{
+		rit = AElementsPair.second;
+	}
+	else
+	{
+		cout << "Returning just the elements in A -- which is a set of all elements...\n";
+		return A;
+	}
+
+	// D = D-eta;
+	D = D-decrementVal;
 	B = A;
-	pair<vector<VertexIdx>, revItMapCountSetVertices> newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
-	vector<VertexIdx> newElementsToB = newElementsToBPair.first;
+
+	pair<set<VertexIdx>, revItMapCountSetVertices> newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
+	set<VertexIdx> newElementsToB = newElementsToBPair.first;
+
 	rit = newElementsToBPair.second;
 
-	for(unsigned int i = 0; i < newElementsToB.size(); i++)
+	set<VertexIdx> :: iterator bIt;	
+
+	for(bIt = newElementsToB.begin(); bIt != newElementsToB.end(); ++bIt)
 	{
-		B.push_back(newElementsToB[i]);
+		B.insert(*bIt);
 	}
+	
+	// for(unsigned int i = 0; i < newElementsToB.size(); i++)
+	// {
+	// 	B.insert(newElementsToB[i]);
+	// }
 
 	BSize = B.size();
 	ASize = A.size();
@@ -933,31 +978,171 @@ vector<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
 
 	while(sizeRatio > 1 + rgamma)
 	{
-		A = B;
-		D = D - eta;
-		newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
-		newElementsToB = newElementsToBPair.first;
-		rit = newElementsToBPair.second;
-
-		for(unsigned int i = 0; i < newElementsToB.size(); i++)
+		if(rit != Labels.rend())
 		{
-			B.push_back(newElementsToB[i]);
-		}
+			A = B;
+			// D = D - eta;
+			D = D - decrementVal;
+			newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
+			newElementsToB = newElementsToBPair.first;
+			rit = newElementsToBPair.second;
 
-		BSize = B.size();
-		ASize = A.size();
-		sizeRatio = (BSize * 1.0)/ASize;
+			// for(unsigned int i = 0; i < newElementsToB.size(); i++)
+			// {
+			// 	B.insert(newElementsToB[i]);
+			// }
+
+			for(bIt = newElementsToB.begin(); bIt != newElementsToB.end(); ++bIt)
+			{
+				B.insert(*bIt);
+			}
+
+			BSize = B.size();
+			ASize = A.size();
+			sizeRatio = (BSize * 1.0)/ASize;
+		}
+		else
+		{
+			cout << "Cannot accumulate B anymore...\n";
+			return B;
+		}
 	}
 
 	return B;
 }
 
 
-vector<VertexIdx> Graph :: querySubgraph(double D_hat)
+set<VertexIdx> Graph :: querySubgraph(double D_hat)
 {
 	double rgamma = sqrt(2 * eta * log(nVertices) / D_hat);
 	cout << "rGamma = " << rgamma << endl;
-	return getDensestSubgraph(1);
+	return getDensestSubgraph(rgamma);
+}
+
+Count Graph :: getMaxIndegree()
+{
+	map<VertexIdx, Count> :: iterator it;
+	Count maxVal = 0;
+	VertexIdx maxNode;
+	for(it = nodeInDeg.begin(); it != nodeInDeg.end(); ++it)
+	{
+		if(it->second > maxVal)
+		{
+			maxVal = it->second;
+			maxNode = it->first;
+		}
+	}
+	cout << "maxNode -- " << maxNode << "----"; 
+	return maxVal;
+}
+
+
+
+int Graph :: checkEdgeAssignment()
+{
+
+	cout << "Checking Edge Assignment --- " << endl;
+	Count i = 0;
+	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt;
+
+	for(edgeMapIt = edgeMap.begin(); edgeMapIt != edgeMap.end(); ++edgeMapIt)
+	{
+		i++;
+		vector<VertexIdx> evector = edgeMapIt->first;
+		EdgeIdx eId = edgeMapIt->second;
+
+		VertexIdx headNode = headOfEdgeId[eId];
+		Count headInDeg = nodeInDeg[headNode];
+
+		VertexIdx minDegNode = getMinDegreeVertexInE(eId);
+		Count minInDeg = nodeInDeg[minDegNode];
+
+		Count diffVal = headInDeg - minInDeg;
+
+		if(diffVal >= 4)
+		{
+			cout << eId << " " << diffVal << "\n"; 
+		} 		
+	}
+
+	cout << "Checked for " << i << " edges --- " << endl;
+
+	return 0;
+}
+
+double Graph :: getDensityOfInducedSubgraph(set<VertexIdx> denseSubgraphNodes)
+{
+
+	cout << "Checking density of said nodes... -- ";
+	Count i = 0;
+	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt;
+
+	vector<edgeVector> selectedEdges;
+
+	Count edgeCount = 0;
+
+	vector<VertexIdx> evector;
+
+	for(edgeMapIt = edgeMap.begin(); edgeMapIt != edgeMap.end(); ++edgeMapIt)
+	{
+		i++;
+		evector = edgeMapIt->first;
+		// EdgeIdx eId = edgeMapIt->second;
+		int flag = 1;
+		for(unsigned int i = 0; i < evector.size(); i++)
+		{
+			VertexIdx node = evector[i];
+			if(denseSubgraphNodes.find(node) == denseSubgraphNodes.end())
+			{
+				flag = 0;
+				break;
+			}
+		}
+
+		if(flag == 1)
+		{
+			edgeCount += 1;
+			selectedEdges.push_back(evector);
+		}
+	}
+
+	double estDensity = (edgeCount*1.0)/denseSubgraphNodes.size();
+
+	cout << i << "---" << (edgeCount*1.0)/denseSubgraphNodes.size() << " " << denseSubgraphNodes.size() << endl;
+
+	return estDensity;
+}
+
+
+pair<double, unsigned int> Graph :: getMaxPartitionDensity()
+{
+	double maxDensity = 0;
+	unsigned int maxSubgraphSize = 0;
+
+	set<VertexIdx> denseSubgraphNodes;
+
+	revItMapCountSetVertices rit;
+
+	for(rit = Labels.rbegin(); rit != Labels.rend(); ++rit)
+	{
+		set<VertexIdx> newElementsToSet = rit->second;
+
+		set<VertexIdx> :: iterator bIt;
+		for(bIt = newElementsToSet.begin(); bIt != newElementsToSet.end(); ++bIt)
+		{
+			denseSubgraphNodes.insert(*bIt);
+		}
+		
+		double currentDensity = getDensityOfInducedSubgraph(denseSubgraphNodes);
+		
+		if(currentDensity > maxDensity)
+		{
+			maxDensity = currentDensity;
+			maxSubgraphSize = denseSubgraphNodes.size();
+		}
+	}
+
+	return make_pair(maxDensity, maxSubgraphSize);
 }
 
 
@@ -987,7 +1172,7 @@ int printEdgeVector(edgeVector e)
 	return 0;
 }
 
-int main()
+int main(int argc, char** argv)
 {
 	// std::vector <VertexIdx> v = {0,1,2,3};
 	// std::vector<pair<VertexIdx, VertexIdx>> e = {{1, 3}, {3, 0}, {0, 2}, {2, 1}, {2, 3}};
@@ -1001,17 +1186,23 @@ int main()
 
 	//read each line from file...
 	// string graphFileName = "dblp.theory.hg.dyn.txt";
-	string graphFileName = "dblp.theory.hg.dyn.10.txt";
+	// string graphFileName = "dblp.theory.hg.dyn.10.txt";
 	// string graphFileName = "dblp.theory.hg.dyn.15.txt";
 	// string graphFileName = "dblp.theory.hypergraph.txt";
 	// string graphFileName = "sampleGraph-1.txt";
 	// string graphFileName = "sample-hypergraph-1.txt";
+
+	string graphFileName = argv[1];
+	string outFileName = argv[2];
+
+
 	ifstream graphFile;
+	ofstream outFile;
 
 	string line;
 	stringstream ss;
 	
-	Count n, m, maxKEdge;
+	Count n, m, maxKEdge, totalProcessedEdges = 0; 
 	VertexIdx e_src, e_dest, eEle;
 	Weight e_weight, Wmax;
 	char insDel;
@@ -1030,6 +1221,10 @@ int main()
 		// if (getline(graphFile, line) != -1)
 		if (getline(graphFile, line))
 		{
+			outFile.open(outFileName, ofstream::out);
+
+			outFile << "YearLabel" << " " << "MaxInDeg" << " " << "(1-eps)MaxInDeg" << " " << "EstimatedDensity" << " " << "DenseSubgraphSize" << " " << "MaxPartitionDensity" << " " << "MaxPartitionSize" << endl;
+
 			ss.clear();
 			ss.str("");
 			ss << line;
@@ -1042,9 +1237,11 @@ int main()
 			// InNbrs -- List of in-nbrs for each node
 			// OutNbrs -- Max priority queue for each node u... indexed by d(v)
 
-			Graph G(n); 	// This initializes du, InNbrs, OutNbrs(list of priority queues...)
+			double etaVal = stod(argv[3]);
+
+			Graph G(n, etaVal); 	// This initializes du, InNbrs, OutNbrs(list of priority queues...)
 			cout << "Done with initialization...\n";
-			
+		
 
 			minWeightedDensity = (Wmax*1.0)/2;
 
@@ -1052,6 +1249,7 @@ int main()
 			scalingProb = (scalingProbParam_c * log2(n)) / (scalingEpsSquared * minWeightedDensity);
 
 			EdgeIdx edgeId = 0;
+			Count edgeAdditions = 0, edgeDeletions = 0;
 			edgeVector currentEdge;
 
 			while(getline(graphFile, line))
@@ -1082,12 +1280,13 @@ int main()
 
 						if(currentEdge.size() >= 2)
 						{
+							edgeAdditions += 1;
+							totalProcessedEdges += 1;
 							G.setEdgeId(currentEdge, edgeId);
-							// edgeMap[currentEdge] = edgeId;
 							G.addEdgeToEdgeList(currentEdge);
 							
-							// cout << "Add the edge -- " << edgeId << " -- "; 
-							// printEdgeVector(currentEdge);
+							cout << "Add the edge -- " << edgeId << " -- "; 
+							printEdgeVector(currentEdge);
 							G.insertEdge(currentEdge, edgeId);
 
 							edgeId += 1;
@@ -1113,12 +1312,12 @@ int main()
 					EdgeIdx delEdgeId = G.checkEdgeExistence(currentEdge);
 					if(delEdgeId != NullEdgeIdx)
 					{
-						// G.getEdgeId(currentEdge);
-						// cout << "Deleting edge " << delEdgeId << " -- "; 
-						// printEdgeVector(currentEdge);
+						edgeDeletions += 1;
+						totalProcessedEdges += 1;
+						cout << "Deleting edge " << delEdgeId << " -- "; 
+						printEdgeVector(currentEdge);
 						G.deleteEdge(currentEdge, delEdgeId);
 						G.removeEdgeFromMap(currentEdge);
-						// edgeMap.erase(currentEdge);
 					}
 					else
 					{
@@ -1129,10 +1328,27 @@ int main()
 				{
 					Count yearLabel;
 					ss >> yearLabel;
-					cout << "\nMax Density Val for " << yearLabel << " : " << G.getDensity() << endl;
-					cout << "\nMax Label Val for " << yearLabel << " : " << G.getMaxLabel() << endl;
-					vector<VertexIdx> denseSubgraph = G.querySubgraph(2.5);
-					cout << "\nSize " << yearLabel << ":" << denseSubgraph.size() << endl;
+
+					cout << "Total Processed Edges -- " << totalProcessedEdges << "\n";
+					cout << "Edge Additions = " << edgeAdditions << " Edge Deletions = " << edgeDeletions << "\n";
+
+					double maxInDeg = G.getMaxLabel();
+					double OneMinusEpsMaxInDeg = G.getDensity();
+					set<VertexIdx> denseSubgraph = G.querySubgraph(1);
+					unsigned int denseSubgraphSize = denseSubgraph.size();
+					double estimatedDensity =  G.getDensityOfInducedSubgraph(denseSubgraph);
+
+					cout << "Getting max partition density....\n";
+					pair<double, unsigned int> maxPartitionedDensity = G.getMaxPartitionDensity();
+
+					cout << "Max Label Val for year " << yearLabel << " : " << maxInDeg << endl;
+					cout << "Max Density Val for year " << yearLabel << " : " << OneMinusEpsMaxInDeg << endl;
+					cout << "Size " << yearLabel << ":" << denseSubgraphSize << "\n";
+					// cout << "Max Indegree = " << G.getMaxIndegree() << "\n";
+					cout << yearLabel << " Estimated Density = " << estimatedDensity << "  Size = " << denseSubgraphSize << "\n";
+					cout << yearLabel << " Max Partition Density = " << maxPartitionedDensity.first << "  Size = " << maxPartitionedDensity.second << "\n";
+
+					outFile << yearLabel << " " << maxInDeg << " " << OneMinusEpsMaxInDeg << " " << estimatedDensity << " " << denseSubgraphSize << " " << maxPartitionedDensity.first << " " << maxPartitionedDensity.second << endl;
 				}
 
 				// binomial sampling to scale the weight....
@@ -1148,6 +1364,10 @@ int main()
 				}
 				*/
 			}
+
+			G.checkEdgeAssignment();
+			outFile.close();
+
 		}
 		else
 		{
