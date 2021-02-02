@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-tag="tags-ask-ubuntu"
+tag="coauth-MAG-Geology"
 r=2
-time="1"
+time="5"
 
-input_f="../data/${tag}/${tag}.hg.I.${time}.txt"
+input_f="../data/${tag}/${tag}.hg.D.${time}.txt"
 
 out_dir="../data/output/${tag}/HWC/D"
 mkdir -p $out_dir
