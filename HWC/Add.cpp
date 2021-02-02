@@ -25,10 +25,11 @@ int main(int argc, char** argv) {
     double epsilon = atof(argv[1]);
     string file_name(argv[2]);
     const int window_sz = atoi(argv[3]);
+    const  int r = atoi(argv[3]);
 
 
     GraphScheduler gs(file_name);
-    Hypergraph h(false, 400000);
+    Hypergraph h(false, r);
     ApproxDS ads(epsilon);
     ads.bindGraph(&h);
     Stats stats(window_sz);

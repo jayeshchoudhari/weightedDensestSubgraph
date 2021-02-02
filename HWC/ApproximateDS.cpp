@@ -164,8 +164,8 @@ void Incremental_tmpl(Hypergraph * graph, const double beta_zero,
                     new_res.subgraph.end());
             beta = new_res.density * (1.0 + epsilon);
         } else {
-             assert(valid_orientation); //this must be true for the theory.    
-             assert(level_degree_map->size() == graph->numOfVertices());
+//             assert(valid_orientation); //this must be true for the theory.
+//             assert(level_degree_map->size() == graph->numOfVertices());
             
             break;
         }
@@ -342,7 +342,7 @@ int ApproxDS::addEdge(vector<int>& edge) {
                     if (u != v)
                         min_level = min(min_level, level_map_[v]);
                 } 
-                assert(min_level != INF_LEVEL && min_level > 0);
+//                assert(min_level != INF_LEVEL && min_level > 0);
                 if (min_level <= level_map_[u]){
                     // other nodes affect, do nothing
                     ;

@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
 
     GraphScheduler gs(file_name);
-    Hypergraph h(true, -1, -1);
+    Hypergraph h(false, -1, -1);
     ApproxDSFullyDyn ads(epsilon);
     ads.bindGraph(&h);
     Stats stats(window_sz);

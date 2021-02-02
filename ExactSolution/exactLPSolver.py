@@ -137,7 +137,11 @@ def dynmaic_densest_subgraph(hg_dyn_file, hg_author_file,out_f, out_dir):
     sol_set = []
     sol_val = []
     labels = []
-    with open (hg_dyn_file, 'rt') as file:
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    with open (hg_dyn_file, 'rt') as file, \
+            open(out_dir+out_f, 'wt') as out_file:
+        out_file.write("Label Density Size \n")
         line_no = 0
         for line in file:
             line_no += 1
@@ -151,6 +155,9 @@ def dynmaic_densest_subgraph(hg_dyn_file, hg_author_file,out_f, out_dir):
             #     continue
             # print(currentline[0])
             if currentline[0]== 'report':
+                # Hack to debug
+                if int(currentline[-1]) < 2007:
+                    continue
                 report_count += 1
                 print("Running LP: "+str(report_count))
                 edgeWeights = [1]* len(edgeList) # Considering unweighted cases
@@ -158,6 +165,9 @@ def dynmaic_densest_subgraph(hg_dyn_file, hg_author_file,out_f, out_dir):
                 sol_set.append(solution_set)
                 sol_val.append(density_val)
                 labels.append(currentline[1].rstrip('\n'))
+                out_file.write(currentline[1].rstrip('\n') + " "
+                               + str(density_val)
+                               + "  " + str(solution_set)+"\n")
                 # solutionMapper (solution_set,hg_author_file)
             else:
                 # Read the vertices in the hyperedge
@@ -178,13 +188,12 @@ def dynmaic_densest_subgraph(hg_dyn_file, hg_author_file,out_f, out_dir):
                     if edge in edgeList: # Ensuring the hyperedge is present in the graph
                         edgeList.remove(edge)
                         # edgeSet.pop(str(edge))
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    with open(out_dir+out_f, 'wt') as out_file:
-        out_file.write("Label Density Size \n")
-        for i,label in enumerate(labels):
-            out_file.write(label + " " + str(sol_val[i])
-                           + "  " + str(len(sol_set[i]))+"\n")
+
+    # with open(out_dir+out_f, 'wt') as out_file:
+    #     out_file.write("Label Density Size \n")
+    #     for i,label in enumerate(labels):
+    #         out_file.write(label + " " + str(sol_val[i])
+    #                        + "  " + str(len(sol_set[i]))+"\n")
 
 
 
@@ -198,8 +207,8 @@ if __name__ == '__main__':
     hg_dyn_f_list = [#'../data/threads_stack_overflow_full/th_stack_of.hg.D.-1.txt',
                      # '../data/tags-stack-overflow/tags_stack_of.hg.D.125.txt',
                      # '../data/DAWN/DAWN.hg.I.1.txt',
-                     '../data/'+file_id+'/'+file_id+'.hg.I.1.txt',
-                     # '../data/dblp/dblp.all.hg.D.1985.15.txt',
+                     # '../data/'+file_id+'/'+file_id+'.hg.I.1.txt',
+                     '../data/dblp/dblp.all.1985.hg.D.10.txt',
                      # '../data/dblp/dblp.all.hg.D.1985.15.txt'
                      ]
     hg_dyn_auth_f_list = ['../data/dblp.all.hg_author.dyn.1985.5.txt',

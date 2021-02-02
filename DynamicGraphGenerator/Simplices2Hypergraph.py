@@ -11,6 +11,7 @@ class InputParam(NamedTuple):
     out_f_path: str
     self_loop: bool = False
     timestamp_scale: int = 1
+    timestamp_threshold: int = 0
 
 
 # Check if a directory exists, and create one if it does not
@@ -48,8 +49,9 @@ def raw_data_to_list(input_param: InputParam):
             time = int(time_f.readline())
             time = int(time/input_param.timestamp_scale)  # Converts milliseconds into a quarter
             if input_param.self_loop or len(edge) > 1:
-                edges.append([edge, time])
-                max_cardinality = max(max_cardinality, len(edge))
+                if time > input_param.timestamp_threshold:
+                    edges.append([edge, time])
+                    max_cardinality = max(max_cardinality, len(edge))
 
     edges.sort(key=lambda k: k[1])
 
@@ -71,7 +73,7 @@ def raw_data_to_list(input_param: InputParam):
 # directory structure, modify accordingly.
 if __name__ == '__main__':
 
-    data_tag = 'tags-math-sx'
+    data_tag = 'tags-stack-overflow'
 
     dir_path = '../data/' + data_tag + '/'
     nvert_filepath = dir_path + 'source/' + data_tag + '-nverts.txt'
@@ -80,14 +82,21 @@ if __name__ == '__main__':
     out_f_path = dir_path + data_tag + '-hg.txt'
 
     self_loop = False
-    timescale = 7776000000  # millisecond to quarter: 7776000000=1000*3600*24*90
+
+    # millisecond to quarter: 7776000000=1000*3600*24*90
+    timescale = 7776000000
+    # timescale = 1 # Copy timestamp as it is from the input simplices
+
+    # ignore all hyperedges before the timestamp_threshold
+    timestamp_threshold = 1
 
     input_params = InputParam(nvert_f_path=nvert_filepath,
                               simplices_f_path=simplices_filepath,
                               time_f_path=time_filepath,
                               out_f_path=out_f_path,
                               self_loop=self_loop,
-                              timestamp_scale=timescale
+                              timestamp_scale=timescale,
+                              timestamp_threshold=timestamp_threshold
                               )
 
     edgeList, n = raw_data_to_list(input_params)
