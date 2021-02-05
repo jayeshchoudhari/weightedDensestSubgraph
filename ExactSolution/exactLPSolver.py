@@ -1,20 +1,30 @@
+from pathlib import Path  # Only available in python>3.5
 from ortools.linear_solver import pywraplp
 import os
 
+
+# Check if a directory exists, and create one if it does not
+def create_directory(directory_path):
+    Path(directory_path).mkdir(parents=True, exist_ok=True)
+
+
 # Parameters
-# n: number of vertices
-# m: number of edges
 # edgeList: list of edges
+# edgeWeights: the weight of corresponding edge
 
 def densestSubgraph(edgeList, edgeWeights):
+
     # Instantiate a Glop solver, naming it SolveDensest.
     solver = pywraplp.Solver('SolveDensest',
                              pywraplp.Solver.GLOP_LINEAR_PROGRAMMING)
+
+    # Some specific solver allows for a more verbose output
     # solver.EnableOutput()
-    # print(n,m)
+
     # Create the variables
     x = {}
     y = {}
+
     # Objective: maximize the weighted sum of edges \sum_{e} y_e w_e
     objective = solver.Objective()
     for i,edge in enumerate(edgeList):
@@ -68,7 +78,8 @@ def densestSubgraph(edgeList, edgeWeights):
 # The function to map the solution set of
 # vertices to actual identifier for the vertices
 
-def solutionMapper (solution_set, hypergraph_mapper_file):
+
+def solutionMapper(solution_set, hypergraph_mapper_file):
     n = 0
     author_list = {}
     print(solution_set)
@@ -155,9 +166,6 @@ def dynmaic_densest_subgraph(hg_dyn_file, hg_author_file,out_f, out_dir):
             #     continue
             # print(currentline[0])
             if currentline[0]== 'report':
-                # Hack to debug
-                if int(currentline[-1]) < 2007:
-                    continue
                 report_count += 1
                 print("Running LP: "+str(report_count))
                 edgeWeights = [1]* len(edgeList) # Considering unweighted cases
@@ -203,22 +211,31 @@ if __name__ == '__main__':
     # static_densest_subgraph (hg_filename,hg_author_filename)
 
     # Input filename
-    file_id = 'tags-math-sx'
-    hg_dyn_f_list = [#'../data/threads_stack_overflow_full/th_stack_of.hg.D.-1.txt',
-                     # '../data/tags-stack-overflow/tags_stack_of.hg.D.125.txt',
-                     # '../data/DAWN/DAWN.hg.I.1.txt',
-                     # '../data/'+file_id+'/'+file_id+'.hg.I.1.txt',
-                     '../data/dblp/dblp.all.1985.hg.D.10.txt',
-                     # '../data/dblp/dblp.all.hg.D.1985.15.txt'
-                     ]
+    file_id = 'tags-ask-ubuntu'
+    dyn = 'D'
+    time = "1"
+
+    input_f = "../data/"+file_id+"/"+file_id+ ".hg." + dyn + "." + time + ".txt"
+
+    # hg_dyn_f_list = [#'../data/threads_stack_overflow_full/th_stack_of.hg.D.-1.txt',
+    #                  # '../data/tags-stack-overflow/tags_stack_of.hg.D.125.txt',
+    #                  # '../data/DAWN/DAWN.hg.I.1.txt',
+    #                  # '../data/'+file_id+'/'+file_id+'.hg.I.1.txt',
+    #                  '../data/dblp/dblp.all.1985.hg.D.10.txt',
+    #                  # '../data/dblp/dblp.all.hg.D.1985.15.txt'
+    #                  ]
     hg_dyn_auth_f_list = ['../data/dblp.all.hg_author.dyn.1985.5.txt',
                           '../data/dblp.all.hg_author.dyn.1985.10.txt',
                           '../data/dblp.all.hg_author.dyn.1985.15.txt'
                           ]
 
     # Output directory and filename
-    out_dir = '../data/output/'+file_id+'/'
+    out_dir = '../data/output/'+file_id+'/Exact/'+dyn+'/'
+    create_directory(out_dir)
 
-    for i,hg_dyn_f in enumerate(hg_dyn_f_list):
-        out_f = 'out.Exact.' + hg_dyn_f.rsplit('/')[-1]
-        dynmaic_densest_subgraph(hg_dyn_f, hg_dyn_auth_f_list[i], out_f, out_dir)
+    # for i,hg_dyn_f in enumerate(hg_dyn_f_list):
+    #     out_f = 'out.Exact.' + hg_dyn_f.rsplit('/')[-1]
+    #     dynmaic_densest_subgraph(hg_dyn_f, hg_dyn_auth_f_list[i], out_f, out_dir)
+    print(input_f)
+    out_f = 'out.Exact.' + input_f.rsplit('/')[-1]
+    dynmaic_densest_subgraph(input_f, hg_dyn_auth_f_list[0], out_f, out_dir)

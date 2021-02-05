@@ -252,7 +252,7 @@ def write_hg_file(edge_list, n, max_card, max_edge_count, dyn_input_param):
 
 if __name__ == '__main__':
 
-    file_id = 'tags-stack-overflow'
+    file_id = 'sx-mathoverflow'
 
     dir_path = 'data/'+file_id+'/'
     # file_id = file_id + '.all.1985'  # Only for dblp dataset
