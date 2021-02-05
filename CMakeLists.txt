@@ -7,4 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/HWC" "${PROJECT_SOURCE_DIR}/HWC/cmake-build-debug")
 
-add_executable(dense.out densestHyperSubGraph-v2-MultiplyEdges-MultiInstance-newDelete-clearpending.cpp)
+add_subdirectory("${PROJECT_SOURCE_DIR}/ESM" "${PROJECT_SOURCE_DIR}/ESM/cmake-build-debug")
+
+#add_executable(dense.out densestHyperSubGraph-v2-MultiplyEdges-MultiInstance-newDelete-clearpending.cpp)

@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
     double epsilon = atof(argv[1]);
     string file_name(argv[2]);
     const int window_sz = atoi(argv[3]);
+    // the r parameter is modified to have the rank of the
+    // hypergraph as an input (It can be 2 or the actual rank)
     const  int r = atoi(argv[3]);
 
 
