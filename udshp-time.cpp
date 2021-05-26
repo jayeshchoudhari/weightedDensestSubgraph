@@ -2,8 +2,7 @@
 #include <bits/stdc++.h>
 #include <chrono>
 
-
-using namespace std;
+using namespace rwNameSpace;
 
 class Graph 
 {
@@ -13,36 +12,36 @@ class Graph
         static double alpha;										// multiplicity
         static double epsVal;									// error factor
 
-        static multimap<vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
-        static vector <vector<VertexIdx>> edgeList;
+        static std::multimap<std::vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        static std::vector <std::vector<VertexIdx>> edgeList;
 
         // above could be static members shared among all the instances of the Graph...
         // each instance for a guess of density...
 	
-        // multimap<vector<VertexIdx>, EdgeIdx> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
-        unordered_map<EdgeIdx, vector<VertexIdx>> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
-        unordered_map<VertexIdx, set<EdgeIdx>> pendingForNode;
-        unordered_map<EdgeIdx, set<VertexIdx>> nodesWithPendingEdge;
+        // std::multimap<std::vector<VertexIdx>, EdgeIdx> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        std::unordered_map<EdgeIdx, std::vector<VertexIdx>> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        std::unordered_map<VertexIdx, std::set<EdgeIdx>> pendingForNode;
+        std::unordered_map<EdgeIdx, std::set<VertexIdx>> nodesWithPendingEdge;
 
  		double eta;
  		double rhoEst;
 
-        unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
+        std::unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
 
-        map <VertexIdx, Count> nodeInDeg;
+        std::map <VertexIdx, Count> nodeInDeg;
 
-        vector <set<EdgeIdx>> InNbrs;							//List of InNbrs
+        std::vector <std::set<EdgeIdx>> InNbrs;							//List of InNbrs
 
         // ****** FOR MAINTAINING THE VISITNEXT DATA-STRUCTURE ********
         // list of neighbors for each node...
-        // vector<list<VertexIdx>> listOfNeighbors;
-        vector<list<EdgeIdx>> listOfNeighbors;
+        // vector<std::list<VertexIdx>> listOfNeighbors;
+        std::vector<std::list<EdgeIdx>> listOfNeighbors;
         // map to the elements in the neighbors list for each node...
-        vector<map<EdgeIdx, list<VertexIdx>::iterator>> mapToNeighborsList;
-        // vector of iterators -- one for each node... that keeps track of which element to access next in visitNext
-        vector<list<EdgeIdx>::iterator> nextPositionIteratorInc;
-        vector<list<EdgeIdx>::iterator> nextPositionIteratorDec;
-        vector<list<EdgeIdx>::iterator> nextPositionIteratorTightInNbr;
+        std::vector<std::map<EdgeIdx, std::list<VertexIdx>::iterator>> mapToNeighborsList;
+        // std::vector of iterators -- one for each node... that keeps track of which element to access next in visitNext
+        std::vector<std::list<EdgeIdx>::iterator> nextPositionIteratorInc;
+        std::vector<std::list<EdgeIdx>::iterator> nextPositionIteratorDec;
+        std::vector<std::list<EdgeIdx>::iterator> nextPositionIteratorTightInNbr;
         // *************************************************************
 
         // ********* TO MAINTAIN A UPDATING PRIORITY QUEUE OF OUTNEIGHBORS *************** 
@@ -50,14 +49,14 @@ class Graph
         // Each element of a vector is a map --  where the map is with a key Count, and value is a set of 
         // of edgeIds, which have the headVertices with value (indegree) as Count...
         // and nodeToOutdegMap is a reverseMap of the same...
-        vector <map<Count, set<EdgeIdx>> > outdegToNodeMap;
-        vector <map<EdgeIdx, Count>> nodeToOutdegMap;
-        vector <unordered_map<VertexIdx, Count>> InDegreeFromNodesView;
+        std::vector <std::map<Count, std::set<EdgeIdx>> > outdegToNodeMap;
+        std::vector <std::map<EdgeIdx, Count>> nodeToOutdegMap;
+        std::vector <std::unordered_map<VertexIdx, Count>> InDegreeFromNodesView;
         // ********************************************************************************
 
         // ********** TO MAINTAIN LABELS/NODES WITH HIGH INDEGREE *************** 
-        map<Count, set<VertexIdx>> Labels;				// this is the data-structure that keeps track of top elements...
-        map<VertexIdx, Count> ReverseLabels;			// this is the data-structure that keeps track of top elements...
+        std::map<Count, std::set<VertexIdx>> Labels;				// this is the data-structure that keeps track of top elements...
+        std::map<VertexIdx, Count> ReverseLabels;			// this is the data-structure that keeps track of top elements...
         // **********************************************************************
 
     public:
@@ -73,13 +72,13 @@ class Graph
     	int addEdgeToPendingList(edgeVector e, EdgeIdx eId);
     	int checkEdgeExistenceInPendingList(edgeVector e, EdgeIdx eId);
 		int removeEdgeFromPendingList(edgeVector e, EdgeIdx eId);
-		pair<EdgeIdx, edgeVector> getPendingEdgeForLastVertex(VertexIdx lv);
+		std::pair<EdgeIdx, edgeVector> getPendingEdgeForLastVertex(VertexIdx lv);
 
 		// Graph(int nv, int ne);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
 
 		// Graph(Count nv, double decEta, double decEps);		
 		//gets number of vertices and edges... edges might change -- but this is just about the file... 
-    	// Graph(vector <VertexIdx> &v, vector<edgeVector> &edList);		//takes in list/vector of nodes and vector of pairs which are edges (undirected)
+    	// Graph(std::vector <VertexIdx> &v, std::vector<edgeVector> &edList);		//takes in list/std::vector of nodes and std::vector of pairs which are edges (undirected)
 
 		Count getNumVertices();
 		Count getNumEdges();
@@ -101,7 +100,7 @@ class Graph
 		int incrementDu(VertexIdx);
 		int decrementDu(VertexIdx);
 
-		pair<VertexIdx, EdgeIdx> getTightInNbr(VertexIdx);
+		std::pair<VertexIdx, EdgeIdx> getTightInNbr(VertexIdx);
 		VertexIdx getMinDegreeVertexInE(EdgeIdx eId);
 		Count getMinLoadInE(EdgeIdx eId);
 		EdgeIdx getTightOutNbr(VertexIdx);
@@ -129,14 +128,14 @@ class Graph
 		Count getMaxLabel();
 		double getDensity();
 
-		pair<set<VertexIdx>, revItMapCountSetVertices> returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D);
-		set<VertexIdx> getDensestSubgraph(double rgamma);
-		set<VertexIdx> querySubgraph(double D_hat);
+		std::pair<std::set<VertexIdx>, revItMapCountSetVertices> returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D);
+		std::set<VertexIdx> getDensestSubgraph(double rgamma);
+		std::set<VertexIdx> querySubgraph(double D_hat);
 		Count getMaxIndegree();
 		int checkEdgeAssignment();
 
-		double getDensityOfInducedSubgraph(set<VertexIdx>);
-		pair<double, unsigned int> getMaxPartitionDensity();
+		double getDensityOfInducedSubgraph(std::set<VertexIdx>);
+		std::pair<double, unsigned int> getMaxPartitionDensity();
 
 		unsigned int getPendingCount();
 		int addListOfPendingEdges();
@@ -150,8 +149,8 @@ Count Graph::nVertices{0};
 Count Graph::nEdges{0};
 double Graph :: alpha{0};
 double Graph :: epsVal{0};
-multimap<vector<VertexIdx>, EdgeIdx> Graph::edgeMap;
-vector <vector<VertexIdx>> Graph::edgeList;
+std::multimap<std::vector<VertexIdx>, EdgeIdx> Graph::edgeMap;
+std::vector <std::vector<VertexIdx>> Graph::edgeList;
 
 
 // Constructor to initialize the graph...
@@ -200,38 +199,38 @@ int Graph :: initializeVariables(int i, Count nv)
 int Graph :: showPQs()
 {
 	VertexIdx ni = 0;
-	cout << "Printing outdegToNodeMap -- vector <map<Count, set<EdgeIdx>>>\n"; 
-	vector <map<Count, set<EdgeIdx>>> :: iterator it1;
+	std::cout << "Printing outdegToNodeMap -- std::vector <std::map<Count, std::set<EdgeIdx>>>\n"; 
+	std::vector <std::map<Count, std::set<EdgeIdx>>> :: iterator it1;
 	for(it1 = outdegToNodeMap.begin(); it1 != outdegToNodeMap.end(); it1++)
 	{
-		cout << ni << "\n";
-		map<Count, set<EdgeIdx>> temp = *it1;
-		map<Count, set<EdgeIdx>>::iterator inIt1;
+		std::cout << ni << "\n";
+		std::map<Count, std::set<EdgeIdx>> temp = *it1;
+		std::map<Count, std::set<EdgeIdx>>::iterator inIt1;
 		for(inIt1 = temp.begin(); inIt1 != temp.end(); inIt1++)
 		{
-			cout << "---" << inIt1->first << " : "; 
-			set<EdgeIdx> tset = inIt1->second;
-			set<EdgeIdx>::iterator tsetIt;
+			std::cout << "---" << inIt1->first << " : "; 
+			std::set<EdgeIdx> tset = inIt1->second;
+			std::set<EdgeIdx>::iterator tsetIt;
 			for(tsetIt = tset.begin(); tsetIt != tset.end(); tsetIt++)
 			{
-				cout << *tsetIt << ", ";
+				std::cout << *tsetIt << ", ";
 			}
-			cout << endl;
+			std::cout << std::endl;
 		}
 		ni++;
 	}
 
-	cout << "Printing nodeToOutdegMap -- vector <map<EdgeIdx, Count>>\n";
+	std::cout << "Printing nodeToOutdegMap -- vector <std::map<EdgeIdx, Count>>\n";
 	ni = 0;
-    vector <map<EdgeIdx, Count>>::iterator it2;
+    std::vector <std::map<EdgeIdx, Count>>::iterator it2;
     for(it2 = nodeToOutdegMap.begin(); it2 != nodeToOutdegMap.end(); it2++)
     {
-    	cout << ni << "\n";
-    	map<EdgeIdx, Count> temp = *it2;
-    	map<EdgeIdx, Count>::iterator inIt1;
+    	std::cout << ni << "\n";
+    	std::map<EdgeIdx, Count> temp = *it2;
+    	std::map<EdgeIdx, Count>::iterator inIt1;
     	for(inIt1 = temp.begin(); inIt1 != temp.end(); inIt1++)
     	{
-    		cout << " --- " << inIt1->first << " " << inIt1->second << "\n"; 
+    		std::cout << " --- " << inIt1->first << " " << inIt1->second << "\n"; 
     	}
 
     	ni++;
@@ -273,22 +272,22 @@ int Graph :: checkEdgeExistenceInPendingList(edgeVector e, EdgeIdx eId)
 }
 
 
-pair<EdgeIdx, edgeVector> Graph :: getPendingEdgeForLastVertex(VertexIdx lv)
+std::pair<EdgeIdx, edgeVector> Graph :: getPendingEdgeForLastVertex(VertexIdx lv)
 {
 	edgeVector e = {};
 	EdgeIdx eId = NullEdgeIdx;
 
-	pair<EdgeIdx, edgeVector> eIdEdgePair = make_pair(eId, e);
+	std::pair<EdgeIdx, edgeVector> eIdEdgePair = std::make_pair(eId, e);
 
-	unordered_map<VertexIdx, set<VertexIdx>> :: iterator pit = pendingForNode.find(lv);
+	std::unordered_map<VertexIdx, std::set<VertexIdx>> :: iterator pit = pendingForNode.find(lv);
 
 	if(pit != pendingForNode.end())
 	{
-		set<EdgeIdx> edgeSet = pit->second;
-		set<EdgeIdx> :: iterator setIt = edgeSet.begin();
+		std::set<EdgeIdx> edgeSet = pit->second;
+		std::set<EdgeIdx> :: iterator setIt = edgeSet.begin();
 		eId = *setIt;
 		e = pendingListOfEdges[eId];
-		eIdEdgePair = make_pair(eId, e);
+		eIdEdgePair = std::make_pair(eId, e);
 	}
 
 	return eIdEdgePair;
@@ -305,7 +304,7 @@ int Graph :: removeEdgeFromPendingList(edgeVector e, EdgeIdx eId)
 
 	pendingListOfEdges.erase(eId);
 	
-	// multimap<vector<VertexIdx>, EdgeIdx>:: iterator pit = pendingListOfEdges.find(e);
+	// std::multimap<std::vector<VertexIdx>, EdgeIdx>:: iterator pit = pendingListOfEdges.find(e);
 	// if(pit != pendingListOfEdges.end())
 	// {
 	// 	pendingListOfEdges.erase(pit);
@@ -323,11 +322,11 @@ Count Graph :: getNumVertices()
 
 int Graph :: showInstanceVariables()
 {
-	cout << "num nodes = " << nVertices << "\n";
-    cout << "eta = " << eta << "\n";
-    cout << "epsVal = " << epsVal << "\n";
-    cout << "rhoEst = " << rhoEst << "\n";
-    cout << "Alpha = " << alpha << "\n";
+	std::cout << "num nodes = " << nVertices << "\n";
+    std::cout << "eta = " << eta << "\n";
+    std::cout << "epsVal = " << epsVal << "\n";
+    std::cout << "rhoEst = " << rhoEst << "\n";
+    std::cout << "Alpha = " << alpha << "\n";
 
 	return 0;
 }
@@ -335,7 +334,7 @@ int Graph :: showInstanceVariables()
 
 EdgeIdx Graph :: checkEdgeExistence(edgeVector e)
 {
-	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	std::multimap<std::vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
 	if(edgeMapIt == edgeMap.end())
 	{
 		return NullEdgeIdx;
@@ -351,14 +350,14 @@ EdgeIdx Graph :: checkEdgeExistence(edgeVector e)
 int Graph :: setEdgeId(edgeVector e, EdgeIdx eId)
 {
 	// edgeMap[e] = eId;
-	edgeMap.insert(pair<vector<VertexIdx>, EdgeIdx>(e, eId));
+	edgeMap.insert(std::pair<std::vector<VertexIdx>, EdgeIdx>(e, eId));
 	// reverseEdgeMap[eId] = e;
 	return 0;
 }
 
 EdgeIdx Graph :: getEdgeId(edgeVector e)
 {
-	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	std::multimap<std::vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
 	EdgeIdx eId = edgeMapIt->second;
 	return eId;
 }
@@ -366,7 +365,7 @@ EdgeIdx Graph :: getEdgeId(edgeVector e)
 int Graph :: removeEdgeFromMap(edgeVector e)
 {
 	// edgeMap.erase(e);
-	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
+	std::multimap<std::vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt = edgeMap.find(e);
 	edgeMap.erase(edgeMapIt);
 	return 0;
 }
@@ -374,8 +373,8 @@ int Graph :: removeEdgeFromMap(edgeVector e)
 
 int Graph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int incOrDec)
 {
-	list<EdgeIdx> :: iterator updateItInc;
-	unordered_map<EdgeIdx, int> touchedNeighbors;
+	std::list<EdgeIdx> :: iterator updateItInc;
+	std::unordered_map<EdgeIdx, int> touchedNeighbors;
 
 	Count start = 0;
 	Count maxNumNeighborsToUpdate = (Count) (4 * nodeInDeg[headNode]) / eta;
@@ -534,10 +533,10 @@ int Graph :: addToPriorityQueue(VertexIdx u, VertexIdx headNode, Count headVal, 
 int Graph :: addEdgeToInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 {
 	// This is to add v to the in-neighbors of u...
-	// add to the list of in-neighbors and update the existence and 
+	// add to the std::list of in-neighbors and update the existence and 
 	// address of this new neigbor in the map...
 	listOfNeighbors[headNode].push_back(eId);				// adding v to the in-neighbors of u...
-	list<EdgeIdx>::iterator esAddress = listOfNeighbors[headNode].end();
+	std::list<EdgeIdx>::iterator esAddress = listOfNeighbors[headNode].end();
 	--esAddress;									// going to the last element -- which is the new one inserted...
 	mapToNeighborsList[headNode][eId] = esAddress;
 
@@ -556,7 +555,7 @@ int Graph :: addEdgeToInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 int Graph :: updateIncPointer(VertexIdx u)
 {
 	// shift the itertor to the next position...
-	list<VertexIdx>:: iterator updateItInc;
+	std::list<VertexIdx>:: iterator updateItInc;
 
 	updateItInc = nextPositionIteratorInc[u];
 	updateItInc++;
@@ -572,7 +571,7 @@ int Graph :: updateIncPointer(VertexIdx u)
 int Graph :: updateDecPointer(VertexIdx u)
 {
 	// shift the itertor to the next position...
-	list<VertexIdx>:: iterator updateItDec;
+	std::list<VertexIdx>:: iterator updateItDec;
 
 	updateItDec = nextPositionIteratorDec[u];
 	updateItDec++;
@@ -589,7 +588,7 @@ int Graph :: updateDecPointer(VertexIdx u)
 int Graph :: updateTightInNbrIterator(VertexIdx u)
 {
 	// shift the itertor to the next position...
-	list<VertexIdx>:: iterator updateItNext;
+	std::list<VertexIdx>:: iterator updateItNext;
 
 	updateItNext = nextPositionIteratorTightInNbr[u];
 	updateItNext++;
@@ -751,7 +750,7 @@ VertexIdx Graph :: getMinDegreeVertexInE(EdgeIdx eId)
 	return minDegVertex;
 }
 
-Count Graph :: getMinLoadInE(EdgeIdx eId)
+rwNameSpace::Count Graph :: getMinLoadInE(EdgeIdx eId)
 {
 	edgeVector e = edgeList[eId];
 	VertexIdx minDegVertex = e[0];
@@ -769,18 +768,18 @@ Count Graph :: getMinLoadInE(EdgeIdx eId)
 }
 
 
-pair<VertexIdx, EdgeIdx> Graph :: getTightInNbr(VertexIdx u)
+std::pair<VertexIdx, EdgeIdx> Graph :: getTightInNbr(VertexIdx u)
 {
 	// VertexIdx neighborToReturn = NullVertexIdx;
 	EdgeIdx neighborEdgeIdToReturn = NullEdgeIdx;
 	VertexIdx neighborNodeIdToReturn = NullVertexIdx;
 
-	list<EdgeIdx> :: iterator updateItInc;
+	std::list<EdgeIdx> :: iterator updateItInc;
 
 	Count start = 0;
 	Count maxNumNeighborsToCheck = (Count)(4 * nodeInDeg[u]) / eta;
 	
-	unordered_map<EdgeIdx, int> touchedNeighbors;
+	std::unordered_map<EdgeIdx, int> touchedNeighbors;
 	// note that you shouldnt be updating an element multiple times within a same 
 	// update... so keep track of the updated neighbors... 
 	// every time start with a new/empty list of neighbors that would be updated...
@@ -833,7 +832,7 @@ pair<VertexIdx, EdgeIdx> Graph :: getTightInNbr(VertexIdx u)
 	// update the position of the nextPosition Iterator... 
 	nextPositionIteratorTightInNbr[u] = updateItInc;
 
-	return make_pair(neighborNodeIdToReturn, neighborEdgeIdToReturn);
+	return std::make_pair(neighborNodeIdToReturn, neighborEdgeIdToReturn);
 }
 
 EdgeIdx Graph :: getTightOutNbr(VertexIdx u)
@@ -858,13 +857,13 @@ EdgeIdx Graph :: getTightOutNbr(VertexIdx u)
 
 EdgeIdx Graph :: getMaxOutNbr(VertexIdx u)
 {
-	// get the degToNode map of u
+	// get the degToNode std::map of u
 	if(outdegToNodeMap[u].size() >= 1)
 	{
-		map<Count, set<EdgeIdx>>::reverse_iterator rit = outdegToNodeMap[u].rbegin();
+		std::map<Count, std::set<EdgeIdx>>::reverse_iterator rit = outdegToNodeMap[u].rbegin();
 		Count maxVal = rit->first;
-		set<EdgeIdx> maxValSet = rit->second;
-		set<EdgeIdx>::iterator it = maxValSet.begin();
+		std::set<EdgeIdx> maxValSet = rit->second;
+		std::set<EdgeIdx>::iterator it = maxValSet.begin();
 		EdgeIdx maxEle = *it;
 
 		return maxEle;
@@ -888,15 +887,15 @@ int Graph :: insertEdge(edgeVector e, EdgeIdx eId)
 	w = getMinDegreeVertexInE(eId);
 	lastEId = eId;
 
-	// cout << nodeInDeg[w] << " headNode indegree during addition\n";
+	// std::cout << nodeInDeg[w] << " headNode indegree during addition\n";
 	addDirectedEdgeToInOutNbrs(eId, w);
 
-	// cout << InNbrs[w].size() << " headNode innbrs size during addition\n";
+	// std::cout << InNbrs[w].size() << " headNode innbrs size during addition\n";
 
 	// headOfEdgeId[eId] = w;
 
 	// check if this results into making some neighboring edge of w tight...
-	pair<VertexIdx, EdgeIdx> minNbrNodeEdgePair = getTightInNbr(w);
+	std::pair<VertexIdx, EdgeIdx> minNbrNodeEdgePair = getTightInNbr(w);
 	ePrime = minNbrNodeEdgePair.second;		// tight edge... -- head of this edge give tight In-neighbor node...
 	// i.e. an edge with a headNode whose degree is very less as compared to that of w....
 	// while(wPrime != -1)
@@ -942,8 +941,8 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 	// 	headNode = NullVertexIdx;
 	// }
 
-	// cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
-	// cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
+	// std::cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
+	// std::cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
 	
 	// if(headNode != NullVertexIdx)
 	// {
@@ -954,7 +953,7 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 		w = headNode;
 		ePrime = getTightOutNbr(w);
 		
-		map<EdgeIdx, int> flippedEdges;
+		std::map<EdgeIdx, int> flippedEdges;
 
 		while(ePrime != NullEdgeIdx)
 		{
@@ -981,7 +980,7 @@ int Graph :: deleteEdge(edgeVector e, EdgeIdx eId)
 }
 
 
-VertexIdx Graph :: deleteEdgeReturnLastVertex(edgeVector e, EdgeIdx eId)
+VertexIdx Graph :: deleteEdgeReturnLastVertex(rwNameSpace::edgeVector e, EdgeIdx eId)
 {
 	// e = u,v directed
 	// VertexIdx u = get<0>(e);
@@ -1001,8 +1000,8 @@ VertexIdx Graph :: deleteEdgeReturnLastVertex(edgeVector e, EdgeIdx eId)
 		headNode = NullVertexIdx;
 	}
 
-	// cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
-	// cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
+	// std::cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
+	// std::cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
 	
 	if(headNode != NullVertexIdx)
 	{
@@ -1013,7 +1012,7 @@ VertexIdx Graph :: deleteEdgeReturnLastVertex(edgeVector e, EdgeIdx eId)
 		w = headNode;
 		ePrime = getTightOutNbr(w);
 		
-		map<EdgeIdx, int> flippedEdges;
+		std::map<EdgeIdx, int> flippedEdges;
 
 		while(ePrime != NullEdgeIdx)
 		{
@@ -1040,18 +1039,18 @@ VertexIdx Graph :: deleteEdgeReturnLastVertex(edgeVector e, EdgeIdx eId)
 }
 
 
-double Graph :: getDensityOfInducedSubgraph(set<VertexIdx> denseSubgraphNodes)
+double Graph :: getDensityOfInducedSubgraph(std::set<VertexIdx> denseSubgraphNodes)
 {
 
-	// cout << "Checking density of said nodes... -- ";
+	// std::cout << "Checking density of said nodes... -- ";
 	Count i = 0;
-	multimap<vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt;
+	std::multimap<std::vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt;
 
-	vector<edgeVector> selectedEdges;
+	std::vector<edgeVector> selectedEdges;
 
 	Count edgeCount = 0;
 
-	vector<VertexIdx> evector;
+	std::vector<VertexIdx> evector;
 
 	for(edgeMapIt = edgeMap.begin(); edgeMapIt != edgeMap.end(); ++edgeMapIt)
 	{
@@ -1078,26 +1077,26 @@ double Graph :: getDensityOfInducedSubgraph(set<VertexIdx> denseSubgraphNodes)
 
 	double estDensity = (edgeCount*1.0)/denseSubgraphNodes.size();
 
-	cout << i << "---" << (edgeCount*1.0)/denseSubgraphNodes.size() << " " << denseSubgraphNodes.size() << endl;
+	std::cout << i << "---" << (edgeCount*1.0)/denseSubgraphNodes.size() << " " << denseSubgraphNodes.size() << std::endl;
 
 	return estDensity;
 }
 
 
-pair<double, unsigned int> Graph :: getMaxPartitionDensity()
+std::pair<double, unsigned int> Graph :: getMaxPartitionDensity()
 {
 	double maxDensity = -1;
 	unsigned int maxSubgraphSize = 0;
 
-	set<VertexIdx> denseSubgraphNodes;
+	std::set<VertexIdx> denseSubgraphNodes;
 
 	revItMapCountSetVertices rit;
 
 	for(rit = Labels.rbegin(); rit != Labels.rend(); ++rit)
 	{
-		set<VertexIdx> newElementsToSet = rit->second;
+		std::set<VertexIdx> newElementsToSet = rit->second;
 
-		set<VertexIdx> :: iterator bIt;
+		std::set<VertexIdx> :: iterator bIt;
 		for(bIt = newElementsToSet.begin(); bIt != newElementsToSet.end(); ++bIt)
 		{
 			denseSubgraphNodes.insert(*bIt);
@@ -1112,9 +1111,9 @@ pair<double, unsigned int> Graph :: getMaxPartitionDensity()
 		}
 	}
 
-	cout << "pending list of edges size ---- " << pendingListOfEdges.size() << endl;
+	std::cout << "pending list of edges size ---- " << pendingListOfEdges.size() << std::endl;
 
-	return make_pair(maxDensity, maxSubgraphSize);
+	return std::make_pair(maxDensity, maxSubgraphSize);
 }
 
 
@@ -1126,8 +1125,8 @@ unsigned int Graph :: getPendingCount()
 int Graph :: addListOfPendingEdges()
 {
 
-	cout << "Adding pending list of edges to active copy...\n";
-	unordered_map<EdgeIdx, vector<VertexIdx>> :: iterator pendingIt;
+	std::cout << "Adding pending list of edges to active copy...\n";
+	std::unordered_map<EdgeIdx, std::vector<VertexIdx>> :: iterator pendingIt;
 
 	for(pendingIt = pendingListOfEdges.begin(); pendingIt != pendingListOfEdges.end(); ++pendingIt)
 	{
@@ -1144,11 +1143,11 @@ int Graph :: addListOfPendingEdges()
 	return 0;
 }
 
-pair<set<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D)
+std::pair<std::set<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D)
 {
-	set<VertexIdx> B;
-    map<Count, set<VertexIdx>>::reverse_iterator preservedRit;
-    map<Count, set<VertexIdx>>::reverse_iterator rit;
+	std::set<VertexIdx> B;
+    std::map<Count, std::set<VertexIdx>>::reverse_iterator preservedRit;
+    std::map<Count, std::set<VertexIdx>>::reverse_iterator rit;
 
 	for(rit = startIt; rit != Labels.rend(); ++rit)
 	{
@@ -1156,8 +1155,8 @@ pair<set<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfiedNo
 		Count densityVal = rit->first;
 		if(densityVal >= D)
 		{
-			set<VertexIdx> dvertices = rit->second;
-			set<VertexIdx> :: iterator dvIt;
+			std::set<VertexIdx> dvertices = rit->second;
+			std::set<VertexIdx> :: iterator dvIt;
 			for(dvIt = dvertices.begin(); dvIt != dvertices.end(); ++dvIt)
 			{
 				B.insert(*dvIt);
@@ -1174,7 +1173,7 @@ pair<set<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfiedNo
 		preservedRit = rit;
 	}
 
-	pair rP = make_pair(B, preservedRit);
+	std::pair rP = std::make_pair(B, preservedRit);
     return rP;
 }
 
@@ -1182,25 +1181,25 @@ pair<set<VertexIdx>, revItMapCountSetVertices> Graph :: returnDensitySatisfiedNo
 
 double Graph :: getDensity()
 {
-	map<Count, set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
+	std::map<Count, std::set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
 	double currMaxDensityValue = (labelsIt->first)*(1-epsVal);
 	// double currMaxDensityValue = (labelsIt->first);
 	return currMaxDensityValue;
 }
 
-set<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
+std::set<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
 {
 	Count decrementVal = eta;
 
 	double D = getMaxLabel();
-	set<VertexIdx> A, B;
+	std::set<VertexIdx> A, B;
 	unsigned int ASize, BSize;
 	double sizeRatio;
 
 	revItMapCountSetVertices rit;
 
 	rit = Labels.rbegin();
-	pair<set<VertexIdx>, revItMapCountSetVertices> AElementsPair = returnDensitySatisfiedNodes(rit, D);
+	std::pair<std::set<VertexIdx>, revItMapCountSetVertices> AElementsPair = returnDensitySatisfiedNodes(rit, D);
 	A = AElementsPair.first;
 
 	if(AElementsPair.second != Labels.rend())
@@ -1209,7 +1208,7 @@ set<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
 	}
 	else
 	{
-		cout << "Returning just the elements in A -- which is a set of all elements...\n";
+		std::cout << "Returning just the elements in A -- which is a set of all elements...\n";
 		return A;
 	}
 
@@ -1217,12 +1216,12 @@ set<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
 	D = D-decrementVal;
 	B = A;
 
-	pair<set<VertexIdx>, revItMapCountSetVertices> newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
-	set<VertexIdx> newElementsToB = newElementsToBPair.first;
+	std::pair<std::set<VertexIdx>, revItMapCountSetVertices> newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
+	std::set<VertexIdx> newElementsToB = newElementsToBPair.first;
 
 	rit = newElementsToBPair.second;
 
-	set<VertexIdx> :: iterator bIt;	
+	std::set<VertexIdx> :: iterator bIt;	
 
 	for(bIt = newElementsToB.begin(); bIt != newElementsToB.end(); ++bIt)
 	{
@@ -1265,7 +1264,7 @@ set<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
 		}
 		else
 		{
-			cout << "Cannot accumulate B anymore...\n";
+			std::cout << "Cannot accumulate B anymore...\n";
 			return B;
 		}
 	}
@@ -1274,21 +1273,21 @@ set<VertexIdx> Graph :: getDensestSubgraph(double rgamma)
 }
 
 
-set<VertexIdx> Graph :: querySubgraph(double D_hat)
+std::set<VertexIdx> Graph :: querySubgraph(double D_hat)
 {
 	double rgamma = sqrt(2 * eta * log(nVertices) / rhoEst);
-	cout << "rGamma = " << rgamma << endl;
+	std::cout << "rGamma = " << rgamma << std::endl;
 	return getDensestSubgraph(rgamma);
 }
 
 
 Count Graph :: getMaxLabel()
 {
-	map<Count, set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
+	std::map<Count, std::set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
 	Count maxVal = rit->first;
 	/*
-	set<VertexIdx> maxValSet = rit->second;
-	set<VertexIdx>::iterator it = maxValSet.begin();
+	std::set<VertexIdx> maxValSet = rit->second;
+	std::set<VertexIdx>::iterator it = maxValSet.begin();
 	VertexIdx maxEle = *it;
 	*/
 	return maxVal;
@@ -1310,8 +1309,8 @@ int sampleFromBinomial(int wt, double p)
 {
 	// unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	// default_random_engine generator (seed);
-  	random_device rd;
-    mt19937 gen(rd());
+  	std::random_device rd;
+    std::mt19937 gen(rd());
     // perform 4 trials, each succeeds 1 in 2 times
     // std::binomial_distribution<> d(4, 0.5);
 
@@ -1324,9 +1323,9 @@ int printEdgeVector(edgeVector e)
 {
 	for(unsigned int i = 0; i < e.size(); i++)
 	{
-		cout << e[i] << " ";
+		std::cout << e[i] << " ";
 	}
-	cout << "\n";
+	std::cout << "\n";
 
 	return 0;
 }
@@ -1334,18 +1333,18 @@ int printEdgeVector(edgeVector e)
 
 int main(int argc, char** argv)
 {
-	string graphFileName = argv[1];
-	string outFileName = argv[2];
-	double epsUD = stod(argv[3]);
+	std::string graphFileName = argv[1];
+	std::string outFileName = argv[2];
+	double epsUD = std::stod(argv[3]);
 
 	double localAlpha = round(1.0/pow(epsUD,2));
 	double rho, rhoEstActive, rhoEst;
 
-	ifstream graphFile;
-	ofstream outFile;
+	std::ifstream graphFile;
+	std::ofstream outFile;
 
-	string line;
-	stringstream ss;
+	std::string line;
+	std::stringstream ss;
 	
 	Count n, m, maxKEdge, totalProcessedEdges = 0; 
 	VertexIdx e_src, e_dest, eEle;
@@ -1369,17 +1368,17 @@ int main(int argc, char** argv)
 
 	int active = 0;
 
-	// cout << "Did I come here...\n";
+	// std::cout << "Did I come here...\n";
 
-	graphFile.open(graphFileName, ifstream::in);
+	graphFile.open(graphFileName, std::ifstream::in);
 	if(graphFile.is_open())
 	{
 		// if (getline(graphFile, line) != -1)
 		if (getline(graphFile, line))
 		{
-			outFile.open(outFileName, ofstream::out);
+			outFile.open(outFileName, std::ofstream::out);
 
-			outFile << "YearLabel" << " " << "MaxInDeg" << " " << "(1-eps)MaxInDeg" << " " << "EstimatedDensity" << " " << "DenseSubgraphSize" << " " << "MaxPartitionDensity" << " " << "MaxPartitionSize" << " " << "TotalProcessedEdges" << " " << "EdgeAdditions" << endl;
+			outFile << "YearLabel" << " " << "MaxInDeg" << " " << "(1-eps)MaxInDeg" << " " << "EstimatedDensity" << " " << "DenseSubgraphSize" << " " << "MaxPartitionDensity" << " " << "MaxPartitionSize" << " " << "TotalProcessedEdges" << " " << "EdgeAdditions" << std::endl;
 
 			ss.clear();
 			ss.str("");
@@ -1408,7 +1407,7 @@ int main(int argc, char** argv)
 			}
 
 			// Graph G(n, etaVal, epsUD); 	// This initializes du, InNbrs, OutNbrs(list of priority queues...)
-			cout << "Done with initialization...\n";
+			std::cout << "Done with initialization...\n";
 		
 			minWeightedDensity = (Wmax*1.0)/2;
 
@@ -1446,7 +1445,7 @@ int main(int argc, char** argv)
 
 						if(currentEdge.size() >= 2)
 						{
-							beginClock = chrono::steady_clock::now();
+							beginClock = std::chrono::steady_clock::now();
 							for(int dup = 0; dup < localAlpha; ++dup)
 							{
 								edgeAdditions += 1;
@@ -1457,7 +1456,7 @@ int main(int argc, char** argv)
 								
 								// if(totalProcessedEdges > 20700000)
 								// {
-								// 	cout << "Add the edge -- " << edgeId << " -- "; 
+								// 	std::cout << "Add the edge -- " << edgeId << " -- "; 
 								// 	printEdgeVector(currentEdge);
 								// }
 
@@ -1504,20 +1503,20 @@ int main(int argc, char** argv)
 								}
 								edgeId += 1;
 							}
-							// cout << "done with multiple copies of -- " << totalProcessedEdges << " -- ";
+							// std::cout << "done with multiple copies of -- " << totalProcessedEdges << " -- ";
 							// printEdgeVector(currentEdge); 
-							endClock = chrono::steady_clock::now();
-							localInsertTime = chrono::duration_cast<std::chrono::microseconds> (endClock - beginClock).count();
+							endClock = std::chrono::steady_clock::now();
+							localInsertTime = std::chrono::duration_cast<std::chrono::microseconds> (endClock - beginClock).count();
 							perReportTime += localInsertTime;
 						}
 						else
 						{
-							cout << "Edge has less than 2 end points...\n";
+							std::cout << "Edge has less than 2 end points...\n";
 						}
 					}
 					else
 					{
-						cout << "Edge has less than 2 end points...\n";
+						std::cout << "Edge has less than 2 end points...\n";
 					}
 				}
 				else if(insDel == '-')
@@ -1535,14 +1534,14 @@ int main(int argc, char** argv)
 						{
 							// if(totalProcessedEdges > 20700000)
 							// {
-							// 	cout << "Deleting edge " << delEdgeId << " -- "; 
+							// 	std::cout << "Deleting edge " << delEdgeId << " -- "; 
 							// 	printEdgeVector(currentEdge);
 							// }
 
 							edgeDeletions += 1;
 							totalProcessedEdges += 1;
 
-							beginClock = chrono::steady_clock::now();
+							beginClock = std::chrono::steady_clock::now();
 							for(int copy = maxInstanceId; copy >= active; --copy)
 							{
 								int checkEdge = Ti[copy].checkEdgeExistenceInPendingList(currentEdge, delEdgeId);
@@ -1579,7 +1578,7 @@ int main(int argc, char** argv)
 								else
 								{
 									VertexIdx lastVertex = Ti[copy].deleteEdgeReturnLastVertex(currentEdge, delEdgeId);
-									pair<EdgeIdx, edgeVector> eIdEdgePair = Ti[copy].getPendingEdgeForLastVertex(lastVertex);
+									std::pair<EdgeIdx, edgeVector> eIdEdgePair = Ti[copy].getPendingEdgeForLastVertex(lastVertex);
 
 									if(eIdEdgePair.first != NullEdgeIdx)
 									{
@@ -1592,36 +1591,36 @@ int main(int argc, char** argv)
 
 							Ti[0].removeEdgeFromMap(currentEdge);
 
-							endClock = chrono::steady_clock::now();
-							localDeleteTime = chrono::duration_cast<std::chrono::microseconds> (endClock - beginClock).count();
+							endClock = std::chrono::steady_clock::now();
+							localDeleteTime = std::chrono::duration_cast<std::chrono::microseconds> (endClock - beginClock).count();
 							perReportTime += localDeleteTime;
 						}
 						else
 						{
-							cout << "Edge does not exists to delete...\n";
+							std::cout << "Edge does not exists to delete...\n";
 							break;
 						}
 					}
-					// cout << "done deleting multiple copies of -- " << totalProcessedEdges << " -- ";
+					// std::cout << "done deleting multiple copies of -- " << totalProcessedEdges << " -- ";
 					// printEdgeVector(currentEdge);
 				}
 				else if(insDel == '=')
 				{
 					if(Ti[active].getPendingCount() > 0)
 					{
-						// cout << "I am coming here.." << Ti[active].getPendingCount() << "\n";
+						// std::cout << "I am coming here.." << Ti[active].getPendingCount() << "\n";
 						Ti[active].addListOfPendingEdges();
-						// cout << "I am coming here.." << Ti[active].getPendingCount() << "\n";
+						// std::cout << "I am coming here.." << Ti[active].getPendingCount() << "\n";
 					}
 
 					Count yearLabel;
 					ss >> yearLabel;
 
-					cout << "Total Processed Edges -- " << totalProcessedEdges << "\n";
-					cout << "Edge Additions = " << edgeAdditions << " Edge Deletions = " << edgeDeletions << "\n";
+					std::cout << "Total Processed Edges -- " << totalProcessedEdges << "\n";
+					std::cout << "Edge Additions = " << edgeAdditions << " Edge Deletions = " << edgeDeletions << "\n";
 
-					vector<double> OneMinusEpsMaxInDegVector;
-					vector<double> MaxInDegVector;
+					std::vector<double> OneMinusEpsMaxInDegVector;
+					std::vector<double> MaxInDegVector;
 					double maxInDeg, OneMinusEpsMaxInDeg;
 
 					MaxInDegVector.push_back(0);
@@ -1638,20 +1637,20 @@ int main(int argc, char** argv)
 					maxInDeg = (Ti[active].getMaxLabel()*1.0)/localAlpha;
 					OneMinusEpsMaxInDeg = Ti[active].getDensity()/localAlpha;
 
-					set<VertexIdx> denseSubgraph = Ti[active].querySubgraph(localAlpha);
+					std::set<VertexIdx> denseSubgraph = Ti[active].querySubgraph(localAlpha);
 					unsigned int denseSubgraphSize = denseSubgraph.size();
 					double estimatedDensity =  Ti[active].getDensityOfInducedSubgraph(denseSubgraph)/localAlpha;
 
-					cout << "Getting max partition density....\n";
-					pair<double, unsigned int> maxPartitionedDensity = Ti[active].getMaxPartitionDensity();
+					std::cout << "Getting max partition density....\n";
+					std::pair<double, unsigned int> maxPartitionedDensity = Ti[active].getMaxPartitionDensity();
 
-					cout << "Max Label Val for year " << yearLabel << " : " << maxInDeg << endl;
-					cout << "Max Density Val for year " << yearLabel << " : " << OneMinusEpsMaxInDeg << endl;
-					cout << "Size " << yearLabel << ":" << denseSubgraphSize << "\n";
-					// cout << "Max Indegree = " << G.getMaxIndegree() << "\n";
-					cout << yearLabel << " Estimated Density = " << estimatedDensity << "  Size = " << denseSubgraphSize << "\n";
-					cout << yearLabel << " Max Partition Density = " << (maxPartitionedDensity.first * 1.0)/localAlpha << "  Size = " << maxPartitionedDensity.second << "\n";
-					cout << yearLabel << " Per Report Time = " << perReportTime << " MicroSecs \n";
+					std::cout << "Max Label Val for year " << yearLabel << " : " << maxInDeg << std::endl;
+					std::cout << "Max Density Val for year " << yearLabel << " : " << OneMinusEpsMaxInDeg << std::endl;
+					std::cout << "Size " << yearLabel << ":" << denseSubgraphSize << "\n";
+					// std::cout << "Max Indegree = " << G.getMaxIndegree() << "\n";
+					std::cout << yearLabel << " Estimated Density = " << estimatedDensity << "  Size = " << denseSubgraphSize << "\n";
+					std::cout << yearLabel << " Max Partition Density = " << (maxPartitionedDensity.first * 1.0)/localAlpha << "  Size = " << maxPartitionedDensity.second << "\n";
+					std::cout << yearLabel << " Per Report Time = " << perReportTime << " MicroSecs \n";
 
 
 					outFile << yearLabel << " " << active << " ";
@@ -1661,7 +1660,7 @@ int main(int argc, char** argv)
 						outFile << copy << " " << MaxInDegVector[copy] << " " << OneMinusEpsMaxInDegVector[copy] << " ";
 					}
 
-					outFile << " " << estimatedDensity << " " << denseSubgraphSize << " " << (maxPartitionedDensity.first * 1.0)/localAlpha << " " << maxPartitionedDensity.second << " " << totalProcessedEdges << " " << edgeAdditions << " " << perReportTime <<  endl;
+					outFile << " " << estimatedDensity << " " << denseSubgraphSize << " " << (maxPartitionedDensity.first * 1.0)/localAlpha << " " << maxPartitionedDensity.second << " " << totalProcessedEdges << " " << edgeAdditions << " " << perReportTime <<  std::endl;
 
 					perReportTime = 0;
 				}
@@ -1672,7 +1671,7 @@ int main(int argc, char** argv)
 
 				if(totalProcessedEdges % 10000 == 0)
 				{
-					cout << "Processed edges = " << totalProcessedEdges << "\n";
+					std::cout << "Processed edges = " << totalProcessedEdges << "\n";
 				}
 			}
 
@@ -1681,14 +1680,14 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			cout << "First line is empty line in the file...\n";
+			std::cout << "First line is empty line in the file...\n";
 			exit(0);
 		}
 		
 	}
 	else
 	{
-		cout << "Cannot open Graph file...\n";
+		std::cout << "Cannot open Graph file...\n";
 		exit(0);
 	}
 

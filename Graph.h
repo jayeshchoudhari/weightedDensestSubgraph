@@ -1,29 +1,24 @@
-
-
-#ifndef rwNameSpace
-#define rwNameSpace
+#ifndef GRAPH_H
+#define GRAPH_H
 
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
-
 #include <fstream>
-
 #include <vector>
 #include <unordered_map>
 #include <map>
 #include <set>
 #include <queue>
 #include <tuple>
-
 #include <sstream>
 // #include <utility>
 
-using namespace std;
 
-namespace rwNameSpace {
-
+namespace rwNameSpace
+{
+    
 	using VertexIdx = int64_t;
     using EdgeIdx   = int64_t;
 
@@ -32,14 +27,14 @@ namespace rwNameSpace {
 
     using Count     = int64_t;
     using Weight 	= int64_t;
-    using ePair 	= pair<VertexIdx, VertexIdx>;
-    using eTupleUnWeighted	= tuple<VertexIdx, VertexIdx>;
-    using eTupleWeighted	= tuple<VertexIdx, VertexIdx, Count>;
-    using VEPair 	= pair<VertexIdx, EdgeIdx>;
+    using ePair 	= std::pair<VertexIdx, VertexIdx>;
+    using eTupleUnWeighted	= std::tuple<VertexIdx, VertexIdx>;
+    using eTupleWeighted	= std::tuple<VertexIdx, VertexIdx, Count>;
+    using VEPair 	= std::pair<VertexIdx, EdgeIdx>;
     
-    using revItMapCountSetVertices = map<Count, set<VertexIdx>>::reverse_iterator;
+    using revItMapCountSetVertices = std::map<Count, std::set<VertexIdx>>::reverse_iterator;
 
-    using edgeVector	= vector<VertexIdx>;
+    using edgeVector	= std::vector<VertexIdx>;
 }
 
 #endif
