@@ -1,11 +1,12 @@
-#include "GraphScheduler.hpp"
+#include "namespace.h"
+#include "GraphLoader.h"
 #include <iostream>
 #include <string>
 #include <cassert>
 
 // using namespace std;
 
-GraphScheduler::GraphScheduler(const string& file_name) 
+GraphLoader::GraphLoader(const string& file_name) 
 {
 	//file_stream_.open(file_name.c_str(), ios_base::in);
     file_stream_.open(file_name.c_str(), ios::in);
@@ -30,69 +31,83 @@ int GraphLoader::loadAllEdges()
 	std::string delimiter = " ";
 	string line;
 	vector<string> tokens;
+    
+    int lineno = 0;
 
     while (getline(file_stream_, line)) 
     {
-        tokens.clear();
-
         size_t pos = 0;
-        std::string token;
-        while (pos != line.npos) 
-        {
-            pos = line.find(delimiter);
-            token = line.substr(0, pos);
-            tokens.push_back(token);
-            line.erase(0, pos + delimiter.length());
-        }
-
-        //assert(tokens.size() >= 2);
-        EdgeUpdate next_edge;
-
-        if (tokens[0][0] == '+') 
-        {
-            next_edge.is_add = true;
-            next_edge.is_report = false;
-        } 
-        else if (tokens[0][0] == '-') 
-        {
-            next_edge.is_add = false;
-            next_edge.is_report = false;
-        }
-        else if (tokens[0] == "report") 
-        {
-            next_edge.is_add = false;
-            next_edge.is_report = true;
-            next_edge.report_label = tokens[1];
-        }
-        else 
-        {
-//		    std::cout << "Unknown token, ignoring the line" << std::endl;
-            continue;
-//		    assert(false);
-        }
-        if (!next_edge.is_report) 
-        {
-            for (size_t i = 1; i < tokens.size(); i++)
-            {
-                next_edge.vertices.push_back(atoi(tokens[i].c_str()));
-            }
-            if (next_edge.is_add) 
-            {
-                next_edge.timestamp = next_edge.vertices.back();
-                next_edge.vertices.pop_back();
-            }
-
-            sort(next_edge.vertices.begin(), next_edge.vertices.end());
-
-            next_edge.vertices.shrink_to_fit();
-        }
-
-        edge_queue_.push_back(next_edge);
         
-        const int MOD = 1000000; // 100000000
-        if (edge_queue_.size() % MOD == MOD-1) 
+        if(lineno == 0)
         {
-            cerr << "READ #: " << edge_queue_.size() + 1 << endl;
+            string token_n, token_mk;
+            pos = line.find(delimiter);
+            token_n = line.substr(0, pos);
+            token_mk = line.substr(pos, line.length());
+            numVertices = atoi(token_n.c_str());
+            maxRank = atoi(token_mk.c_str());
+        }
+        else
+        {
+            tokens.clear();
+            std::string token;
+            while (pos != line.npos) 
+            {
+                pos = line.find(delimiter);
+                token = line.substr(0, pos);
+                tokens.push_back(token);
+                line.erase(0, pos + delimiter.length());
+            }
+
+            //assert(tokens.size() >= 2);
+            EdgeUpdate next_edge;
+
+            if (tokens[0][0] == '+') 
+            {
+                next_edge.is_add = true;
+                next_edge.is_report = false;
+            } 
+            else if (tokens[0][0] == '-') 
+            {
+                next_edge.is_add = false;
+                next_edge.is_report = false;
+            }
+            else if (tokens[0] == "report") 
+            {
+                next_edge.is_add = false;
+                next_edge.is_report = true;
+                next_edge.report_label = tokens[1];
+            }
+            else 
+            {
+    //		    std::cout << "Unknown token, ignoring the line" << std::endl;
+                continue;
+    //		    assert(false);
+            }
+            if (!next_edge.is_report) 
+            {
+                for (size_t i = 1; i < tokens.size(); i++)
+                {
+                    next_edge.vertices.push_back(atoi(tokens[i].c_str()));
+                }
+                if (next_edge.is_add) 
+                {
+                    next_edge.timestamp = next_edge.vertices.back();
+                    next_edge.vertices.pop_back();
+                }
+
+                sort(next_edge.vertices.begin(), next_edge.vertices.end());
+
+                next_edge.vertices.shrink_to_fit();
+            }
+
+            edge_queue_.push_back(next_edge);
+            
+            const int MOD = 1000000; // 100000000
+            if (edge_queue_.size() % MOD == MOD-1) 
+            {
+                cerr << "READ #: " << edge_queue_.size() + 1 << endl;
+            }
         }
     }
 
@@ -107,7 +122,7 @@ int GraphLoader::loadAllEdges()
 }
 
 
-EdgeUpdate GraphScheduler::next_update() 
+EdgeUpdate GraphLoader::next_update() 
 {
 	EdgeUpdate edge_queue;
 	edge_queue = edge_queue_[position_queue_];

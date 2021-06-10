@@ -1,5 +1,3 @@
-
-
 #ifndef rwNameSpace
 #define rwNameSpace
 
@@ -17,8 +15,8 @@
 
 using namespace std;
 
-namespace rwNameSpace {
-
+namespace rwNameSpace 
+{
 	using VertexIdx = int64_t;
     using EdgeIdx   = int64_t;
     using Count     = int64_t;

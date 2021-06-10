@@ -1,6 +1,10 @@
 #ifndef GRAPH_LOADER_H
 #define GRAPH_LOADER_H
 
+#include "namespace.h"
+
+using namespace std;
+
 typedef struct EdgeUpdate
 {
     std::vector<int> vertices;
@@ -19,13 +23,26 @@ class GraphLoader
         int loadAllEdges();
         ifstream file_stream_;
         unsigned int position_queue_;
-        vector<EdgeUpdate> edge_queue_;
+        std::vector<EdgeUpdate> edge_queue_;
+        int64_t numVertices;
+        unsigned int maxRank;
 
     public:
-        GraphScheduler(const string& file_name);
+        GraphLoader(const string& file_name);
         // virtual ~GraphScheduler();
 
         EdgeUpdate next_update();
+
+        int64_t getNumVertices()
+        {
+            return numVertices;
+        }
+        
+        int getMaxEdgeRank()
+        {
+            return maxRank;
+        }
+
         inline bool has_next()
         {
             return (unsigned int) position_queue_ < (unsigned int) edge_queue_.size();

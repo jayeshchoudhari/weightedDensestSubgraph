@@ -1,9 +1,9 @@
-#include "GraphScheduler.hpp"
+#include "./include/namespace.h"
+#include "./include/GraphLoader.h"
 #include <iostream>
 #include <vector>
 #include <utility>
 #include <algorithm>
-#include <assert.h>
 #include <string>
 
 
@@ -21,6 +21,12 @@ int main(int argc, char** argv)
 	std::string outFileName = argv[2];
 	
 	double epsUD = std::stod(argv[3]);
+
+	GraphLoader GL(graphFileName);
+
+	Count n = GL.getNumVertices();
+	
+	
 
     return 0;
 }
