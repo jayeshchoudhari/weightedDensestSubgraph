@@ -1,5 +1,6 @@
 #include "./include/namespace.h"
 #include "./include/GraphLoader.h"
+#include "./include/DynamicGraph.h"
 #include <iostream>
 #include <vector>
 #include <utility>
@@ -20,13 +21,23 @@ int main(int argc, char** argv)
 	std::ofstream outFile;
 	std::string outFileName = argv[2];
 	
-	double epsUD = std::stod(argv[3]);
+	float epsUD = std::stod(argv[3]);
 
 	GraphLoader GL(graphFileName);
 
 	Count n = GL.getNumVertices();
-	
-	
+
+
+	int logn = (int)log2(n);
+	int numInstances = logn + 1;
+	int maxInstanceId = numInstances - 1;
+
+
+	DynamicGraph Ti[numInstances];
+	for(int i = 0; i <= maxInstanceId; ++i)
+	{
+		Ti[i].initializeVariables(i, n, epsUD);
+	}
 
     return 0;
 }
