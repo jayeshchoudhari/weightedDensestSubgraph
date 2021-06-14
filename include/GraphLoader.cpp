@@ -3,13 +3,14 @@
 #include <iostream>
 #include <string>
 #include <cassert>
+#include <stdlib.h>
 
 // using namespace std;
 
-GraphLoader::GraphLoader(const string& file_name) 
+GraphLoader::GraphLoader(const std::string& file_name) 
 {
 	//file_stream_.open(file_name.c_str(), ios_base::in);
-    file_stream_.open(file_name.c_str(), ios::in);
+    file_stream_.open(file_name.c_str(), std::ios::in);
 	if (file_stream_.is_open())
     {
 	    std::cout<< "open file" <<std::endl;
@@ -29,18 +30,18 @@ GraphLoader::GraphLoader(const string& file_name)
 int GraphLoader::loadAllEdges() 
 {
 	std::string delimiter = " ";
-	string line;
-	vector<string> tokens;
+	std::string line;
+	std::vector<std::string> tokens;
     
     int lineno = 0;
 
     while (getline(file_stream_, line)) 
     {
         size_t pos = 0;
-        
+        char *eptr;
         if(lineno == 0)
         {
-            string token_n, token_mk;
+            std::string token_n, token_mk;
             pos = line.find(delimiter);
             token_n = line.substr(0, pos);
             token_mk = line.substr(pos, line.length());
@@ -88,7 +89,8 @@ int GraphLoader::loadAllEdges()
             {
                 for (size_t i = 1; i < tokens.size(); i++)
                 {
-                    next_edge.vertices.push_back(atoi(tokens[i].c_str()));
+                    // next_edge.vertices.push_back(atoi(tokens[i].c_str()));
+                    next_edge.vertices.push_back(strtol(tokens[i].c_str(), &eptr, 10));
                 }
                 if (next_edge.is_add) 
                 {
@@ -106,7 +108,7 @@ int GraphLoader::loadAllEdges()
             const int MOD = 1000000; // 100000000
             if (edge_queue_.size() % MOD == MOD-1) 
             {
-                cerr << "READ #: " << edge_queue_.size() + 1 << endl;
+                std::cerr << "READ #: " << edge_queue_.size() + 1 << std::endl;
             }
         }
     }

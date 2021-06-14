@@ -3,37 +3,28 @@
 
 #include "namespace.h"
 
-using namespace std;
-
-typedef struct EdgeUpdate
-{
-    std::vector<int> vertices;
-    int timestamp;
-	bool is_add;
-	bool is_report;
-	std::string report_label;
-} EdgeUpdate;
-
+// using namespace std;
 
 class GraphLoader
 {
     private:
-        int add_count;
-        int remove_count;
-        int loadAllEdges();
-        ifstream file_stream_;
+        Count add_count;
+        Count remove_count;
         unsigned int position_queue_;
+        std::ifstream file_stream_;
         std::vector<EdgeUpdate> edge_queue_;
-        int64_t numVertices;
+        Count numVertices;
         unsigned int maxRank;
 
     public:
-        GraphLoader(const string& file_name);
+        GraphLoader(const std::string& file_name);
         // virtual ~GraphScheduler();
+
+        int loadAllEdges();
 
         EdgeUpdate next_update();
 
-        int64_t getNumVertices()
+        Count getNumVertices()
         {
             return numVertices;
         }

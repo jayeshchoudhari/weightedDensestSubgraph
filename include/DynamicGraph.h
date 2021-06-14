@@ -1,6 +1,10 @@
 #ifndef DYNAMIC_GRAPH_H
 #define DYNAMIC_GRAPH_H
 
+#include "namespace.h"
+#include "EdgeManager.h"
+#include "GraphLoader.h"
+#include <iostream>
 
 class DynamicGraph 
 {
@@ -60,10 +64,13 @@ class DynamicGraph
         // **********************************************************************
 
     public:
-
-    	static int initializeStaticMembers(Count nv, double decEps);
-
+		DynamicGraph(int i, Count nv, float epsUD);
+		
+    	// static int initializeStaticMembers(Count nv, double decEps);
     	int initializeVariables(int i, Count nv, float epsVal);
+
+		int insertEdge(edgeVector &e, EdgeIdx eId, EdgeManager &EM);
+		int deleteEdge(edgeVector &e, EdgeIdx eId);
 
     	int showInstanceVariables();
 
@@ -88,28 +95,28 @@ class DynamicGraph
         // //For debugging.  Not for serialization.
         // void print(FILE *f = stdout) const;
 
-		int addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx v);
-		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx headNode);
-		int flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode);
+		int addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx newHeadNode, EdgeManager &EM);
+		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx headNode, EdgeManager &EM);
+		int flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode, EdgeManager &EM);
 		
 		int addToPriorityQueue(VertexIdx, VertexIdx, Count, EdgeIdx);
 		int removeFromPriorityQueue(VertexIdx, VertexIdx, EdgeIdx);
 		
-		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec);
+		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec, EdgeManager &EM);
 
-		int incrementDu(VertexIdx);
-		int decrementDu(VertexIdx);
+		int incrementDu(VertexIdx u, EdgeManager &EM);
+		int decrementDu(VertexIdx v);
 
-		std::pair<VertexIdx, EdgeIdx> getTightInNbr(VertexIdx);
-		VertexIdx getMinDegreeVertexInE(EdgeIdx eId);
+		std::pair<VertexIdx, EdgeIdx> getTightInNbr(VertexIdx v, EdgeManager &EM);
+		VertexIdx getMinDegreeVertexInE(EdgeIdx eId, EdgeManager &EM);
 		Count getMinLoadInE(EdgeIdx eId);
 		EdgeIdx getTightOutNbr(VertexIdx);
 		EdgeIdx getMaxOutNbr(VertexIdx u);
 
 		int updateLabels(VertexIdx u, Count changeVal);
 
-		int insertEdge(edgeVector e, EdgeIdx eId);
-		int deleteEdge(edgeVector e, EdgeIdx eId);
+		
+
 		VertexIdx deleteEdgeReturnLastVertex(edgeVector e, EdgeIdx eId);
 
 		int updateIncPointer(VertexIdx u);

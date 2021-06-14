@@ -1,5 +1,7 @@
 #include "./include/namespace.h"
 #include "./include/GraphLoader.h"
+#include "./include/EdgeManager.h"
+#include "./include/DynOpManager.h"
 #include "./include/DynamicGraph.h"
 #include <iostream>
 #include <vector>
@@ -17,27 +19,67 @@ int main(int argc, char** argv)
     }
 
 	std::string graphFileName = argv[1];
-	
+
 	std::ofstream outFile;
 	std::string outFileName = argv[2];
 	
 	float epsUD = std::stod(argv[3]);
+	double localAlpha = round(1.0/pow(epsUD,2));
+	int duplicationFactor = (int)localAlpha;
+	// vector<vector<VertexIdx>> mainEdgePool;
+
+	std::unordered_map<std::vector<VertexIdx>, EdgeIdx, vectorHash> mainEdge2Ids;
 
 	GraphLoader GL(graphFileName);
-
 	Count n = GL.getNumVertices();
-
 
 	int logn = (int)log2(n);
 	int numInstances = logn + 1;
 	int maxInstanceId = numInstances - 1;
+	EdgeManager EM;
 
-
-	DynamicGraph Ti[numInstances];
+	std::vector<DynamicGraph> DGVecInstance;
+	// DynamicGraph DG[numInstances];
 	for(int i = 0; i <= maxInstanceId; ++i)
 	{
-		Ti[i].initializeVariables(i, n, epsUD);
+		DGVecInstance.push_back(DynamicGraph(i, n, epsUD));
 	}
+
+	DynOpManager DOM(maxInstanceId);
+	DOM.bindGraph(DGVecInstance);
+
+	EdgeIdx edgeId = 0;
+	EdgeIdx edgeDupId = 0;
+
+	while (GL.has_next())
+	{
+        EdgeUpdate edge_up = GL.next_update();
+        // int edge_id = 0;
+        if (!edge_up.is_report) 
+		{
+            if (edge_up.is_add) 
+			{
+				std::vector<VertexIdx> eVec = edge_up.vertices;
+				mainEdge2Ids[eVec] = edgeId;
+				std::vector<EdgeIdx> edgeDuplicatorIds = EM.abc(eVec, duplicationFactor);
+                DOM.addEdge(edge_up.vertices, edgeDuplicatorIds, EM);
+				edgeId += 1;
+            }
+			// else
+			// {
+            //     edge_id = DOM.removeEdge(edge_up.vertices);
+            // }
+        }
+        // assert(edge_id < std::numeric_limits<int>::max() );
+
+        // double upper_bound = h.maxEdgeCardinality() * ads.beta() * (1.0 + ads.epsilon());
+
+        // if (edge_id != -1)
+		// {
+        //     stats.exec_op(edge_up.is_add, edge_up.is_report, ads.subgraphSize(),
+        //             ads.density(), upper_bound, edge_up.timestamp, edge_up.report_label);
+        // }
+    }
 
     return 0;
 }
