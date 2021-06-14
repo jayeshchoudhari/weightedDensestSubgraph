@@ -14,6 +14,7 @@ int DynOpManager :: bindGraph(vector<DynamicGraph> &G)
 
 int DynOpManager :: addEdge(edgeVector &currentEdge, vector<EdgeIdx> &eDupId, EdgeManager &EM)
 {
+    double rho, rhoEst, rhoEstActive;
     for(unsigned int dup = 0; dup < eDupId.size(); ++dup)
     {
 
@@ -22,7 +23,6 @@ int DynOpManager :: addEdge(edgeVector &currentEdge, vector<EdgeIdx> &eDupId, Ed
             DG[copy].insertEdge(currentEdge, eDupId[dup], EM);
         }
 
-        /*
         if(active + 1 <= maxInstanceId)
         {
             rho = DG[active + 1].getDensity();
@@ -44,22 +44,18 @@ int DynOpManager :: addEdge(edgeVector &currentEdge, vector<EdgeIdx> &eDupId, Ed
 
         for(int copy = active - 1; copy >= 1; --copy)
         {
-            // DG[copy].insertEdge(currentEdge, eDupId[dup], EM);
-            
             rhoEst = DG[copy].getRhoEst();
             Count minLoad = DG[copy].getMinLoadInE(eDupId[dup], EM);
 
             if(minLoad >= 2 * rhoEst)
             {
-                DG[copy].addEdgeToPendingList(currentEdge, eDupId[dup], EM);
+                DG[copy].addEdgeToPendingList(currentEdge, eDupId[dup]);
             }
             else
             {
                 DG[copy].insertEdge(currentEdge, eDupId[dup], EM);
             }
-            
         }
-        */
     }
     return 0;
 }

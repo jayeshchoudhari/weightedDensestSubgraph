@@ -109,7 +109,8 @@ class DynamicGraph
 
 		std::pair<VertexIdx, EdgeIdx> getTightInNbr(VertexIdx v, EdgeManager &EM);
 		VertexIdx getMinDegreeVertexInE(EdgeIdx eId, EdgeManager &EM);
-		Count getMinLoadInE(EdgeIdx eId);
+		Count getMinLoadInE(EdgeIdx eId, EdgeManager &EM);
+		
 		EdgeIdx getTightOutNbr(VertexIdx);
 		EdgeIdx getMaxOutNbr(VertexIdx u);
 
