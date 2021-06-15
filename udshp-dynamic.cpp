@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	int duplicationFactor = (int)localAlpha;
 	// vector<vector<VertexIdx>> mainEdgePool;
 
-	std::unordered_map<std::vector<VertexIdx>, EdgeIdx, vectorHash> mainEdge2Ids;
+	std::unordered_map<std::vector<VertexIdx>, std::list<EdgeIdx>, vectorHash> mainEdge2Ids;
 
 	GraphLoader GL(graphFileName);
 	Count n = GL.getNumVertices();
@@ -57,18 +57,22 @@ int main(int argc, char** argv)
         // int edge_id = 0;
         if (!edge_up.is_report) 
 		{
+			// std::vector<VertexIdx> eVec = edge_up.vertices;
             if (edge_up.is_add) 
 			{
-				std::vector<VertexIdx> eVec = edge_up.vertices;
-				mainEdge2Ids[eVec] = edgeId;
-				std::vector<EdgeIdx> edgeDuplicatorIds = EM.abc(eVec, duplicationFactor);
+				mainEdge2Ids[edge_up.vertices].push_back(edgeId);
+				std::vector<EdgeIdx> edgeDuplicatorIds = EM.getEdgeIdsAfterDuplication(edge_up.vertices, duplicationFactor);
                 DOM.addEdge(edge_up.vertices, edgeDuplicatorIds, EM);
 				edgeId += 1;
             }
-			// else
-			// {
-            //     edge_id = DOM.removeEdge(edge_up.vertices);
-            // }
+			else
+			{
+				if(mainEdge2Ids.find(edge_up.vertices) != mainEdge2Ids.end())
+				{
+					std::vector<EdgeIdx> edgeDuplicatorIds = EM.retrieveDuplicatedEdgeIds(edge_up.vertices, duplicationFactor);
+					// edge_id = DOM.removeEdge(edge_up.vertices);
+				}
+            }
         }
         // assert(edge_id < std::numeric_limits<int>::max() );
 

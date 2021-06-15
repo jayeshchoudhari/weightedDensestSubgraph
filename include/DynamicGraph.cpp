@@ -507,3 +507,46 @@ int DynamicGraph :: updateTightInNbrIterator(VertexIdx u)
 
 	return 0;
 }
+
+double DynamicGraph :: getDensity()
+{
+	std::map<Count, std::set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
+	double currMaxDensityValue = (labelsIt->first)*(1-epsVal);
+	// double currMaxDensityValue = (labelsIt->first);
+	return currMaxDensityValue;
+}
+
+double DynamicGraph :: getRhoEst()
+{
+	return rhoEst;
+}
+
+Count DynamicGraph :: getMinLoadInE(EdgeIdx eId, EdgeManager &EM)
+{
+	edgeVector e = EM.edgeDupList[eId];
+	VertexIdx minDegVertex = e[0];
+	Count minDegree = nodeInDeg[e[0]];
+
+	for(unsigned int i = 1; i < e.size(); i++)
+	{
+		if(nodeInDeg[e[i]] < minDegree)
+		{
+			minDegVertex = e[i];
+			minDegree = nodeInDeg[e[i]];
+		}
+	}
+	return minDegree;
+}
+
+int DynamicGraph :: addEdgeToPendingList(edgeVector e, EdgeIdx eId)
+{
+	pendingListOfEdges[eId] = e;
+
+	for(unsigned int i = 0; i < e.size(); i++)
+	{
+		pendingForNode[e[i]].insert(eId);
+		nodesWithPendingEdge[eId].insert(e[i]);
+	}
+
+	return 0;
+}
