@@ -24,7 +24,8 @@ class DynamicGraph
         // each instance for a guess of density...
 	
         // std::multimap<std::vector<VertexIdx>, EdgeIdx> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
-        std::unordered_map<EdgeIdx, std::vector<VertexIdx>> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        // std::unordered_map<EdgeIdx, std::vector<VertexIdx>> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        std::unordered_map<EdgeIdx, int> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
         std::unordered_map<VertexIdx, std::set<EdgeIdx>> pendingForNode;
         std::unordered_map<EdgeIdx, std::set<VertexIdx>> nodesWithPendingEdge;
 
@@ -70,16 +71,18 @@ class DynamicGraph
     	int initializeVariables(int i, Count nv, float epsVal);
 
 		int insertEdge(edgeVector &e, EdgeIdx eId, EdgeManager &EM);
-		int deleteEdge(edgeVector &e, EdgeIdx eId);
+		// int deleteEdge(edgeVector &e, EdgeIdx eId, EdgeManager &EM);
+		VertexIdx deleteEdge(edgeVector &e, EdgeIdx eId, EdgeManager &EM);
 
     	int showInstanceVariables();
 
     	double getRhoEst();
 
-    	int addEdgeToPendingList(edgeVector e, EdgeIdx eId);
-    	int checkEdgeExistenceInPendingList(edgeVector e, EdgeIdx eId);
-		int removeEdgeFromPendingList(edgeVector e, EdgeIdx eId);
-		std::pair<EdgeIdx, edgeVector> getPendingEdgeForLastVertex(VertexIdx lv);
+    	int addEdgeToPendingList(edgeVector &e, EdgeIdx eId);
+    	int checkEdgeExistenceInPendingList(EdgeIdx eId);
+		int removeEdgeFromPendingList(edgeVector &e, EdgeIdx eId);
+		// std::pair<EdgeIdx, edgeVector> getPendingEdgeForLastVertex(VertexIdx lv);
+		EdgeIdx getPendingEdgeForLastVertex(VertexIdx lv);
 
 		// Graph(int nv, int ne);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
 
@@ -95,8 +98,8 @@ class DynamicGraph
         // //For debugging.  Not for serialization.
         // void print(FILE *f = stdout) const;
 
-		int addDirectedEdgeToInOutNbrs(EdgeIdx eId, VertexIdx newHeadNode, EdgeManager &EM);
-		int removeDirectedEdgeFromInOutNbrs(EdgeIdx eId, VertexIdx headNode, EdgeManager &EM);
+		int addDirectedEdgeToInOutNbrs(edgeVector &currentEdge, EdgeIdx eId, VertexIdx newHeadNode);
+		int removeDirectedEdgeFromInOutNbrs(edgeVector &currentEdge, EdgeIdx eId, VertexIdx headNode);
 		int flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode, EdgeManager &EM);
 		
 		int addToPriorityQueue(VertexIdx, VertexIdx, Count, EdgeIdx);
@@ -105,12 +108,12 @@ class DynamicGraph
 		int updateNextNeighbors(VertexIdx u, Count newDuVal, int incOrDec, EdgeManager &EM);
 
 		int incrementDu(VertexIdx u, EdgeManager &EM);
-		int decrementDu(VertexIdx v);
+		int decrementDu(VertexIdx u, EdgeManager &EM);
 
 		std::pair<VertexIdx, EdgeIdx> getTightInNbr(VertexIdx v, EdgeManager &EM);
-		VertexIdx getMinDegreeVertexInE(EdgeIdx eId, EdgeManager &EM);
+		VertexIdx getMinDegreeVertexInE(edgeVector &currentEdge);
 		Count getMinLoadInE(EdgeIdx eId, EdgeManager &EM);
-		
+
 		EdgeIdx getTightOutNbr(VertexIdx);
 		EdgeIdx getMaxOutNbr(VertexIdx u);
 

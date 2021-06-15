@@ -13,13 +13,10 @@ class DynOpManager
         int active;
         int maxInstanceId;
     public:
-        DynOpManager(int mId)
-        {
-            active= 0;
-            maxInstanceId = mId;
-        }
+        DynOpManager(int maxId);
         int bindGraph(std::vector<DynamicGraph> &G);
         int addEdge(edgeVector &e, std::vector<EdgeIdx> &eDupIds, EdgeManager &EM);
+        int removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eDupId, EdgeManager &EM);
 };
 
 #endif // DYN_OP_MANAGER_H

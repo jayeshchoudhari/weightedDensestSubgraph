@@ -70,7 +70,18 @@ int main(int argc, char** argv)
 				if(mainEdge2Ids.find(edge_up.vertices) != mainEdge2Ids.end())
 				{
 					std::vector<EdgeIdx> edgeDuplicatorIds = EM.retrieveDuplicatedEdgeIds(edge_up.vertices, duplicationFactor);
-					// edge_id = DOM.removeEdge(edge_up.vertices);
+					DOM.removeEdge(edge_up.vertices, edgeDuplicatorIds, EM);
+					mainEdge2Ids[edge_up.vertices].pop_front();
+
+					// remove edge from the main set of edgeIds 
+					if(mainEdge2Ids[edge_up.vertices].size() == 0)
+					{
+						mainEdge2Ids.erase(edge_up.vertices);
+					}
+				}
+				else
+				{
+					std::cout << "This edge was never added before... \n";
 				}
             }
         }
