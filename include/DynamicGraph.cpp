@@ -43,6 +43,8 @@ DynamicGraph :: DynamicGraph(int i, Count nv, float epsUD)
 	nextPositionIteratorTightInNbr.resize(nv);
 }
 
+/////////////////////////////////* INSERTIONS */////////////////////////////////////
+
 int DynamicGraph :: insertEdge(edgeVector &currentEdge, EdgeIdx eId, EdgeManager &EM)
 {
 	// // e = u,v -- at this moment an edge isnt directed...
@@ -86,81 +88,6 @@ int DynamicGraph :: insertEdge(edgeVector &currentEdge, EdgeIdx eId, EdgeManager
 	return 0;
 }
 
-
-VertexIdx DynamicGraph :: deleteEdge(edgeVector &currentEdge, EdgeIdx eId, EdgeManager &EM)
-{
-	// e = u,v directed
-	// VertexIdx u = get<0>(e);
-	// VertexIdx v = get<1>(e);
-
-	VertexIdx w, wPrime;
-	EdgeIdx ePrime, lastEId;
-
-	VertexIdx headNode;
-
-	// if(headOfEdgeId.find(eId) != headOfEdgeId.end())
-	// {
-	headNode = headOfEdgeId[eId];
-	// }
-	// else
-	// {
-	// 	headNode = NullVertexIdx;
-	// }
-
-	// std::cout << nodeInDeg[headNode] << " headNode indegree before deletion\n";
-	// std::cout << InNbrs[headNode].size() << " headNode innbrs size before deletion\n";
-	
-	// if(headNode != NullVertexIdx)
-	// {
-		// remove e from the InNbrs of headNode...
-	removeDirectedEdgeFromInOutNbrs(currentEdge, eId, headNode);
-
-	lastEId = eId;
-	w = headNode;
-	ePrime = getTightOutNbr(w);
-	
-	std::map<EdgeIdx, int> flippedEdges;
-
-	while(ePrime != NullEdgeIdx)
-	{
-		wPrime = headOfEdgeId[ePrime];
-		// eTupleUnWeighted eFlip(w, wPrime);
-		// if(flippedEdges.find(ePrime) == flippedEdges.end())
-		// {	
-		flipDirectedEdge(ePrime, wPrime, w, EM); 	// flipDirctedEdge(eId, oldHeadNode, newHeadNode)
-		w = wPrime;
-		lastEId = ePrime;
-		ePrime = getTightOutNbr(w);
-		flippedEdges[ePrime] = 1;
-		// }
-		// else
-		// {
-		// 	break;
-		// }
-	}
-
-	decrementDu(w, EM);
-	// }
-	return w;
-}
-
-
-VertexIdx DynamicGraph :: getMinDegreeVertexInE(edgeVector &currentEdge)
-{
-	VertexIdx minDegVertex = currentEdge[0];
-	Count minDegree = nodeInDeg[currentEdge[0]];
-
-	for(unsigned int i = 1; i < currentEdge.size(); i++)
-	{
-		if(nodeInDeg[currentEdge[i]] < minDegree)
-		{
-			minDegVertex = currentEdge[i];
-			minDegree = nodeInDeg[currentEdge[i]];
-		}
-	}
-	return minDegVertex;
-}
-
 int DynamicGraph :: addDirectedEdgeToInOutNbrs(edgeVector &e, EdgeIdx eId, VertexIdx newHeadNode)
 {
 	// e = u,v directed
@@ -192,6 +119,7 @@ int DynamicGraph :: addDirectedEdgeToInOutNbrs(edgeVector &e, EdgeIdx eId, Verte
 
 	return 0;
 }
+
 
 std::pair<VertexIdx, EdgeIdx> DynamicGraph :: getTightInNbr(VertexIdx u, EdgeManager &EM)
 {
@@ -260,82 +188,21 @@ std::pair<VertexIdx, EdgeIdx> DynamicGraph :: getTightInNbr(VertexIdx u, EdgeMan
 	return std::make_pair(neighborNodeIdToReturn, neighborEdgeIdToReturn);
 }
 
-EdgeIdx DynamicGraph :: getTightOutNbr(VertexIdx u)
+VertexIdx DynamicGraph :: getMinDegreeVertexInE(edgeVector &currentEdge)
 {
-	EdgeIdx maxOutE = getMaxOutNbr(u);
-	if(maxOutE != NullEdgeIdx)
+	VertexIdx minDegVertex = currentEdge[0];
+	Count minDegree = nodeInDeg[currentEdge[0]];
+
+	for(unsigned int i = 1; i < currentEdge.size(); i++)
 	{
-		VertexIdx t = headOfEdgeId[maxOutE];
-		// degree of t in the view of u
-		// if the max neighbor has the degree that is very high than that of u...
-		float threshold = nodeInDeg[u] + eta/2;
-		if((InDegreeFromNodesView[u][t] >= threshold))
-		// if((nodeInDeg[t] >= nodeInDeg[u] + eta/2))
+		if(nodeInDeg[currentEdge[i]] < minDegree)
 		{
-			return maxOutE;
+			minDegVertex = currentEdge[i];
+			minDegree = nodeInDeg[currentEdge[i]];
 		}
 	}
-	return NullEdgeIdx;
+	return minDegVertex;
 }
-
-EdgeIdx DynamicGraph :: getMaxOutNbr(VertexIdx u)
-{
-	// get the degToNode std::map of u
-	if(outdegToNodeMap[u].size() >= 1)
-	{
-		std::map<Count, std::set<EdgeIdx>>::reverse_iterator rit = outdegToNodeMap[u].rbegin();
-		Count maxVal = rit->first;
-		std::set<EdgeIdx> maxValSet = rit->second;
-		std::set<EdgeIdx>::iterator it = maxValSet.begin();
-		EdgeIdx maxEle = *it;
-
-		return maxEle;
-	}
-
-	return NullVertexIdx;
-}
-
-
-int DynamicGraph :: flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode, EdgeManager &EM)
-{
-	edgeVector currentEdge = EM.edgeDupList[eId];
-	removeDirectedEdgeFromInOutNbrs(currentEdge, eId, oldHeadNode);
-
-	// VertexIdx u = get<0>(e);
-	// VertexIdx v = get<1>(e);
-	// eTupleUnWeighted flippedEdge (v,u);
-	addDirectedEdgeToInOutNbrs(currentEdge, eId, newHeadNode);
-	return 0;
-}
-
-
-int DynamicGraph :: incrementDu(VertexIdx headNode, EdgeManager &EM)
-{
-	updateLabels(headNode, 1);
-	// Count oldVal = nodeInDeg[headNode];
-	nodeInDeg[headNode] += 1;
-
-	Count newDuVal = nodeInDeg[headNode];
-
-	// update 4 din(headNode)/eta next in-neigbors of u about the change in the in-degree of u 
-	updateNextNeighbors(headNode, newDuVal, 1, EM);
-
-	return 0;
-}
-
-int DynamicGraph :: decrementDu(VertexIdx oldHeadNode, EdgeManager &EM)
-{
-	updateLabels(oldHeadNode, -1);
-	// Count oldVal = nodeInDeg[oldHeadNode];
-	nodeInDeg[oldHeadNode] -= 1;
-	Count newDuVal = nodeInDeg[oldHeadNode];
-
-	// update 4 din(u)/eta next in-neigbors of u about the change in the in-degree of u 
-	updateNextNeighbors(oldHeadNode, newDuVal, -1, EM);
-	
-	return 0;
-}
-
 
 int DynamicGraph :: addEdgeToInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 {
@@ -359,6 +226,7 @@ int DynamicGraph :: addEdgeToInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
 	return 0;
 }
 
+
 int DynamicGraph :: addToPriorityQueue(VertexIdx u, VertexIdx headNode, Count headVal, EdgeIdx headEId)
 {
 	// we need to add/update headNode in the priority queue of u;
@@ -381,6 +249,57 @@ int DynamicGraph :: addToPriorityQueue(VertexIdx u, VertexIdx headNode, Count he
 	}
 
 	return 0;
+}
+
+
+
+int DynamicGraph :: incrementDu(VertexIdx headNode, EdgeManager &EM)
+{
+	updateLabels(headNode, 1);
+	// Count oldVal = nodeInDeg[headNode];
+	nodeInDeg[headNode] += 1;
+
+	Count newDuVal = nodeInDeg[headNode];
+
+	// update 4 din(headNode)/eta next in-neigbors of u about the change in the in-degree of u 
+	updateNextNeighbors(headNode, newDuVal, 1, EM);
+
+	return 0;
+}
+
+
+/////////////////////////////////* DELETIONS */////////////////////////////////////
+
+VertexIdx DynamicGraph :: deleteEdge(edgeVector &currentEdge, EdgeIdx eId, EdgeManager &EM)
+{
+	VertexIdx w, wPrime;
+	EdgeIdx ePrime, lastEId;
+
+	VertexIdx headNode;
+
+	headNode = headOfEdgeId[eId];
+	// remove e from the InNbrs of headNode...
+	removeDirectedEdgeFromInOutNbrs(currentEdge, eId, headNode);
+
+	lastEId = eId;
+	w = headNode;
+	ePrime = getTightOutNbr(w);
+	
+	std::map<EdgeIdx, int> flippedEdges;
+
+	while(ePrime != NullEdgeIdx)
+	{
+		wPrime = headOfEdgeId[ePrime];	
+		flipDirectedEdge(ePrime, wPrime, w, EM); 	// flipDirctedEdge(eId, oldHeadNode, newHeadNode)
+		w = wPrime;
+		lastEId = ePrime;
+		ePrime = getTightOutNbr(w);
+		flippedEdges[ePrime] = 1;
+	}
+
+	decrementDu(w, EM);
+	// }
+	return w;
 }
 
 
@@ -411,6 +330,122 @@ int DynamicGraph :: removeDirectedEdgeFromInOutNbrs(edgeVector &e, EdgeIdx eId, 
 }
 
 
+EdgeIdx DynamicGraph :: getTightOutNbr(VertexIdx u)
+{
+	EdgeIdx maxOutE = getMaxOutNbr(u);
+	if(maxOutE != NullEdgeIdx)
+	{
+		VertexIdx t = headOfEdgeId[maxOutE];
+		// degree of t in the view of u
+		// if the max neighbor has the degree that is very high than that of u...
+		float threshold = nodeInDeg[u] + eta/2;
+		if((InDegreeFromNodesView[u][t] >= threshold))
+		// if((nodeInDeg[t] >= nodeInDeg[u] + eta/2))
+		{
+			return maxOutE;
+		}
+	}
+	return NullEdgeIdx;
+}
+
+
+int DynamicGraph :: removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
+{
+	// This is to remove v from the in-neighbors of u...
+
+	// check if the current nextIterator is not at the same position as the 
+	// node to be removed...
+	// if so shift the position of the next-iterator to the next element
+	if(mapToNeighborsList[headNode].find(eId) != mapToNeighborsList[headNode].end())
+	{
+		// if the address of the next position iterator matches with that of that of the 
+		// element to be removed...
+		if(nextPositionIteratorInc[headNode] == mapToNeighborsList[headNode][eId])
+		{
+			updateIncPointer(headNode);
+		}
+
+		if(nextPositionIteratorDec[headNode] == mapToNeighborsList[headNode][eId])
+		{
+			updateDecPointer(headNode);
+		}
+
+		if(nextPositionIteratorTightInNbr[headNode] == mapToNeighborsList[headNode][eId])
+		{
+			updateTightInNbrIterator(headNode);
+		}
+
+		// removing eId from the in-neighbors of u....
+		// Remove eId using the iterator of eId, otherwise it is linear time... 
+		// we want constant time...
+		listOfNeighbors[headNode].erase(mapToNeighborsList[headNode][eId]);
+		// remove element and its address from the map as well
+		mapToNeighborsList[headNode].erase(eId);
+	}
+
+	return 0;
+}
+
+
+int DynamicGraph :: removeFromPriorityQueue(VertexIdx u, VertexIdx oldHeadNode, EdgeIdx oldHeadEId)
+{
+	Count oldVal = nodeToOutdegMap[u][oldHeadEId];
+	outdegToNodeMap[u][oldVal].erase(oldHeadEId);
+	if(outdegToNodeMap[u][oldVal].size() < 1)
+	{
+		outdegToNodeMap[u].erase(oldVal);
+	}
+	nodeToOutdegMap[u].erase(oldHeadEId);
+
+	return 0;
+}
+
+EdgeIdx DynamicGraph :: getMaxOutNbr(VertexIdx u)
+{
+	// get the degToNode std::map of u
+	if(outdegToNodeMap[u].size() >= 1)
+	{
+		std::map<Count, std::set<EdgeIdx>>::reverse_iterator rit = outdegToNodeMap[u].rbegin();
+		Count maxVal = rit->first;
+		std::set<EdgeIdx> maxValSet = rit->second;
+		std::set<EdgeIdx>::iterator it = maxValSet.begin();
+		EdgeIdx maxEle = *it;
+
+		return maxEle;
+	}
+
+	return NullVertexIdx;
+}
+
+int DynamicGraph :: decrementDu(VertexIdx oldHeadNode, EdgeManager &EM)
+{
+	updateLabels(oldHeadNode, -1);
+	// Count oldVal = nodeInDeg[oldHeadNode];
+	nodeInDeg[oldHeadNode] -= 1;
+	Count newDuVal = nodeInDeg[oldHeadNode];
+
+	// update 4 din(u)/eta next in-neigbors of u about the change in the in-degree of u 
+	updateNextNeighbors(oldHeadNode, newDuVal, -1, EM);
+	
+	return 0;
+}
+
+
+/////////////////////////////////* COMMON TO INSERTION AND DELETION *///////////////////////////////////
+
+int DynamicGraph :: flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode, EdgeManager &EM)
+{
+	edgeVector currentEdge = EM.edgeDupList[eId];
+	removeDirectedEdgeFromInOutNbrs(currentEdge, eId, oldHeadNode);
+
+	// VertexIdx u = get<0>(e);
+	// VertexIdx v = get<1>(e);
+	// eTupleUnWeighted flippedEdge (v,u);
+	addDirectedEdgeToInOutNbrs(currentEdge, eId, newHeadNode);
+	return 0;
+}
+
+
 int DynamicGraph :: updateLabels(VertexIdx u, Count changeVal)
 {
 	Count oldVal = nodeInDeg[u];
@@ -427,6 +462,7 @@ int DynamicGraph :: updateLabels(VertexIdx u, Count changeVal)
 
 	return 0;
 }
+
 
 int DynamicGraph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int incOrDec, EdgeManager &EM)
 {
@@ -518,55 +554,42 @@ int DynamicGraph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int 
 	return 0;
 }
 
-int DynamicGraph :: removeEdgeFromInNbrsForVisitNext(VertexIdx headNode, EdgeIdx eId)
-{
-	// This is to remove v from the in-neighbors of u...
 
-	// check if the current nextIterator is not at the same position as the 
-	// node to be removed...
-	// if so shift the position of the next-iterator to the next element
-	if(mapToNeighborsList[headNode].find(eId) != mapToNeighborsList[headNode].end())
-	{
-		// if the address of the next position iterator matches with that of that of the 
-		// element to be removed...
-		if(nextPositionIteratorInc[headNode] == mapToNeighborsList[headNode][eId])
-		{
-			updateIncPointer(headNode);
-		}
 
-		if(nextPositionIteratorDec[headNode] == mapToNeighborsList[headNode][eId])
-		{
-			updateDecPointer(headNode);
-		}
 
-		if(nextPositionIteratorTightInNbr[headNode] == mapToNeighborsList[headNode][eId])
-		{
-			updateTightInNbrIterator(headNode);
-		}
 
-		// removing eId from the in-neighbors of u....
-		// Remove eId using the iterator of eId, otherwise it is linear time... 
-		// we want constant time...
-		listOfNeighbors[headNode].erase(mapToNeighborsList[headNode][eId]);
-		// remove element and its address from the map as well
-		mapToNeighborsList[headNode].erase(eId);
-	}
 
-	return 0;
-}
 
-int DynamicGraph :: removeFromPriorityQueue(VertexIdx u, VertexIdx oldHeadNode, EdgeIdx oldHeadEId)
-{
-	Count oldVal = nodeToOutdegMap[u][oldHeadEId];
-	outdegToNodeMap[u][oldVal].erase(oldHeadEId);
-	if(outdegToNodeMap[u][oldVal].size() < 1)
-	{
-		outdegToNodeMap[u].erase(oldVal);
-	}
-	nodeToOutdegMap[u].erase(oldHeadEId);
 
-	return 0;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int DynamicGraph :: updateIncPointer(VertexIdx u)
 {
