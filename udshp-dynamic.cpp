@@ -57,6 +57,7 @@ int main(int argc, char** argv)
         // int edge_id = 0;
         if (!edge_up.is_report) 
 		{
+			///////////// INSERTION /////////////////////////
 			// std::vector<VertexIdx> eVec = edge_up.vertices;
             if (edge_up.is_add) 
 			{
@@ -67,13 +68,14 @@ int main(int argc, char** argv)
             }
 			else
 			{
+				///////////// DELETION /////////////////////////
 				if(mainEdge2Ids.find(edge_up.vertices) != mainEdge2Ids.end())
 				{
 					std::vector<EdgeIdx> edgeDuplicatorIds = EM.retrieveDuplicatedEdgeIds(edge_up.vertices, duplicationFactor);
 					DOM.removeEdge(edge_up.vertices, edgeDuplicatorIds, EM);
-					mainEdge2Ids[edge_up.vertices].pop_front();
 
 					// remove edge from the main set of edgeIds 
+					mainEdge2Ids[edge_up.vertices].pop_front();
 					if(mainEdge2Ids[edge_up.vertices].size() == 0)
 					{
 						mainEdge2Ids.erase(edge_up.vertices);

@@ -267,6 +267,36 @@ int DynamicGraph :: incrementDu(VertexIdx headNode, EdgeManager &EM)
 	return 0;
 }
 
+Count DynamicGraph :: getMinLoadInE(EdgeIdx eId, EdgeManager &EM)
+{
+	edgeVector e = EM.edgeDupList[eId];
+	VertexIdx minDegVertex = e[0];
+	Count minDegree = nodeInDeg[e[0]];
+
+	for(unsigned int i = 1; i < e.size(); i++)
+	{
+		if(nodeInDeg[e[i]] < minDegree)
+		{
+			minDegVertex = e[i];
+			minDegree = nodeInDeg[e[i]];
+		}
+	}
+	return minDegree;
+}
+
+
+int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
+{
+	pendingListOfEdges[eId] = 1;
+
+	for(unsigned int i = 0; i < e.size(); i++)
+	{
+		pendingForNode[e[i]].insert(eId);
+		nodesWithPendingEdge[eId].insert(e[i]);
+	}
+
+	return 0;
+}
 
 /////////////////////////////////* DELETIONS */////////////////////////////////////
 
@@ -431,6 +461,106 @@ int DynamicGraph :: decrementDu(VertexIdx oldHeadNode, EdgeManager &EM)
 }
 
 
+int DynamicGraph :: checkEdgeExistenceInPendingList(EdgeIdx eId)
+{
+	if(pendingListOfEdges.find(eId) != pendingListOfEdges.end() && pendingListOfEdges[eId] == 1)  
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
+// std::pair<EdgeIdx, edgeVector> Graph :: getPendingEdgeForLastVertex(VertexIdx lv)
+EdgeIdx DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
+{
+	// edgeVector e = {};
+	EdgeIdx eId = NullEdgeIdx;
+
+	// std::pair<EdgeIdx, edgeVector> eIdEdgePair = std::make_pair(eId, e);
+
+	std::unordered_map<VertexIdx, std::set<VertexIdx>> :: iterator pit = pendingForNode.find(lv);
+
+	if(pit != pendingForNode.end())
+	{
+		std::set<EdgeIdx> edgeSet = pit->second;
+		std::set<EdgeIdx> :: iterator setIt = edgeSet.begin();
+		eId = *setIt;
+		// e = pendingListOfEdges[eId];
+		// eIdEdgePair = std::make_pair(eId, e);
+	}
+
+	// return eIdEdgePair;
+	return eId;
+}
+
+
+int DynamicGraph :: removeEdgeFromPendingList(edgeVector &e, EdgeIdx eId)
+{
+	for(unsigned int i = 0; i < e.size(); i++)
+	{
+		pendingForNode[e[i]].erase(eId);
+		nodesWithPendingEdge[eId].erase(e[i]);
+	}
+
+	pendingListOfEdges.erase(eId);
+
+	return 0;
+}
+
+int DynamicGraph :: updateIncPointer(VertexIdx u)
+{
+	// shift the itertor to the next position...
+	std::list<VertexIdx>:: iterator updateItInc;
+
+	updateItInc = nextPositionIteratorInc[u];
+	updateItInc++;
+	if(updateItInc == listOfNeighbors[u].end())
+	{
+		updateItInc = listOfNeighbors[u].begin();
+	}
+	nextPositionIteratorInc[u] = updateItInc;
+
+	return 0;
+}
+
+int DynamicGraph :: updateDecPointer(VertexIdx u)
+{
+	// shift the itertor to the next position...
+	std::list<VertexIdx>:: iterator updateItDec;
+
+	updateItDec = nextPositionIteratorDec[u];
+	updateItDec++;
+	if(updateItDec == listOfNeighbors[u].end())
+	{
+		updateItDec = listOfNeighbors[u].begin();
+	}
+	nextPositionIteratorDec[u] = updateItDec;
+
+	return 0;
+}
+
+int DynamicGraph :: updateTightInNbrIterator(VertexIdx u)
+{
+	// shift the itertor to the next position...
+	std::list<VertexIdx>:: iterator updateItNext;
+
+	updateItNext = nextPositionIteratorTightInNbr[u];
+	updateItNext++;
+	if(updateItNext == listOfNeighbors[u].end())
+	{
+		updateItNext = listOfNeighbors[u].begin();
+	}
+	nextPositionIteratorTightInNbr[u] = updateItNext;
+
+	return 0;
+}
+
+
+
 /////////////////////////////////* COMMON TO INSERTION AND DELETION *///////////////////////////////////
 
 int DynamicGraph :: flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode, EdgeManager &EM)
@@ -556,88 +686,7 @@ int DynamicGraph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int DynamicGraph :: updateIncPointer(VertexIdx u)
-{
-	// shift the itertor to the next position...
-	std::list<VertexIdx>:: iterator updateItInc;
-
-	updateItInc = nextPositionIteratorInc[u];
-	updateItInc++;
-	if(updateItInc == listOfNeighbors[u].end())
-	{
-		updateItInc = listOfNeighbors[u].begin();
-	}
-	nextPositionIteratorInc[u] = updateItInc;
-
-	return 0;
-}
-
-int DynamicGraph :: updateDecPointer(VertexIdx u)
-{
-	// shift the itertor to the next position...
-	std::list<VertexIdx>:: iterator updateItDec;
-
-	updateItDec = nextPositionIteratorDec[u];
-	updateItDec++;
-	if(updateItDec == listOfNeighbors[u].end())
-	{
-		updateItDec = listOfNeighbors[u].begin();
-	}
-	nextPositionIteratorDec[u] = updateItDec;
-
-	return 0;
-}
-
-int DynamicGraph :: updateTightInNbrIterator(VertexIdx u)
-{
-	// shift the itertor to the next position...
-	std::list<VertexIdx>:: iterator updateItNext;
-
-	updateItNext = nextPositionIteratorTightInNbr[u];
-	updateItNext++;
-	if(updateItNext == listOfNeighbors[u].end())
-	{
-		updateItNext = listOfNeighbors[u].begin();
-	}
-	nextPositionIteratorTightInNbr[u] = updateItNext;
-
-	return 0;
-}
+/////////////////////////////////* GETTING DENSITY ESTIMATE *///////////////////////////////////
 
 double DynamicGraph :: getDensity()
 {
@@ -652,82 +701,6 @@ double DynamicGraph :: getRhoEst()
 	return rhoEst;
 }
 
-Count DynamicGraph :: getMinLoadInE(EdgeIdx eId, EdgeManager &EM)
-{
-	edgeVector e = EM.edgeDupList[eId];
-	VertexIdx minDegVertex = e[0];
-	Count minDegree = nodeInDeg[e[0]];
-
-	for(unsigned int i = 1; i < e.size(); i++)
-	{
-		if(nodeInDeg[e[i]] < minDegree)
-		{
-			minDegVertex = e[i];
-			minDegree = nodeInDeg[e[i]];
-		}
-	}
-	return minDegree;
-}
-
-int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
-{
-	pendingListOfEdges[eId] = 1;
-
-	for(unsigned int i = 0; i < e.size(); i++)
-	{
-		pendingForNode[e[i]].insert(eId);
-		nodesWithPendingEdge[eId].insert(e[i]);
-	}
-
-	return 0;
-}
-
-int DynamicGraph :: checkEdgeExistenceInPendingList(EdgeIdx eId)
-{
-	if(pendingListOfEdges.find(eId) != pendingListOfEdges.end() && pendingListOfEdges[eId] == 1)  
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
 
 
-// std::pair<EdgeIdx, edgeVector> Graph :: getPendingEdgeForLastVertex(VertexIdx lv)
-EdgeIdx DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
-{
-	// edgeVector e = {};
-	EdgeIdx eId = NullEdgeIdx;
 
-	// std::pair<EdgeIdx, edgeVector> eIdEdgePair = std::make_pair(eId, e);
-
-	std::unordered_map<VertexIdx, std::set<VertexIdx>> :: iterator pit = pendingForNode.find(lv);
-
-	if(pit != pendingForNode.end())
-	{
-		std::set<EdgeIdx> edgeSet = pit->second;
-		std::set<EdgeIdx> :: iterator setIt = edgeSet.begin();
-		eId = *setIt;
-		// e = pendingListOfEdges[eId];
-		// eIdEdgePair = std::make_pair(eId, e);
-	}
-
-	// return eIdEdgePair;
-	return eId;
-}
-
-
-int DynamicGraph :: removeEdgeFromPendingList(edgeVector &e, EdgeIdx eId)
-{
-	for(unsigned int i = 0; i < e.size(); i++)
-	{
-		pendingForNode[e[i]].erase(eId);
-		nodesWithPendingEdge[eId].erase(e[i]);
-	}
-
-	pendingListOfEdges.erase(eId);
-
-	return 0;
-}
