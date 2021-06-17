@@ -106,7 +106,7 @@ int DynamicGraph :: addDirectedEdgeToInOutNbrs(edgeVector &e, EdgeIdx eId, Verte
 	Count headNodeVal = nodeInDeg[newHeadNode];
 
 	// update e in the priority queue of all u's except v with this v's value...
-	// edgeVector e = EM.edgeDupList[eId];
+	// edgeVector e = EM.edgeDupMap[eId];
 	for(unsigned int i = 0; i < e.size(); i++)
 	{
 		VertexIdx u = e[i];
@@ -162,7 +162,7 @@ std::pair<VertexIdx, EdgeIdx> DynamicGraph :: getTightInNbr(VertexIdx u, EdgeMan
 
 			// check if this current neighbor satisfies the tight in-neighbor condition...
 			// VertexIdx edgeHeadNode = headOfEdgeId[usNextNeighborEdgeId];
-			edgeVector currentEdge = EM.edgeDupList[usNextNeighborEdgeId];
+			edgeVector currentEdge = EM.edgeDupMap[usNextNeighborEdgeId];
 			VertexIdx minDegVertexInNbrE = getMinDegreeVertexInE(currentEdge);
 
 			Count minNodeInDeg = nodeInDeg[minDegVertexInNbrE];
@@ -269,7 +269,7 @@ int DynamicGraph :: incrementDu(VertexIdx headNode, EdgeManager &EM)
 
 Count DynamicGraph :: getMinLoadInE(EdgeIdx eId, EdgeManager &EM)
 {
-	edgeVector e = EM.edgeDupList[eId];
+	edgeVector e = EM.edgeDupMap[eId];
 	VertexIdx minDegVertex = e[0];
 	Count minDegree = nodeInDeg[e[0]];
 
@@ -346,7 +346,7 @@ int DynamicGraph :: removeDirectedEdgeFromInOutNbrs(edgeVector &e, EdgeIdx eId, 
 
 	InNbrs[oldHeadNode].erase(eId);
 	removeEdgeFromInNbrsForVisitNext(oldHeadNode, eId);
-	// edgeVector e = EM.edgeDupList[eId];
+	// edgeVector e = EM.edgeDupMap[eId];
 
 	for(unsigned int i = 0; i < e.size(); i++)
 	{
@@ -565,7 +565,7 @@ int DynamicGraph :: updateTightInNbrIterator(VertexIdx u)
 
 int DynamicGraph :: flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode, EdgeManager &EM)
 {
-	edgeVector currentEdge = EM.edgeDupList[eId];
+	edgeVector currentEdge = EM.edgeDupMap[eId];
 	removeDirectedEdgeFromInOutNbrs(currentEdge, eId, oldHeadNode);
 
 	// VertexIdx u = get<0>(e);
@@ -627,7 +627,7 @@ int DynamicGraph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int 
 		{		
 			// update new in-degree value of u to the neighbor
 			// addToPriorityQueue(u, usNextNeighbor, newDuVal);
-			edgeVector eNbr = EM.edgeDupList[usNextNeighbor];
+			edgeVector eNbr = EM.edgeDupMap[usNextNeighbor];
 			for(unsigned int i = 0; i < eNbr.size(); i++)
 			{
 				VertexIdx nbrNode = eNbr[i];
@@ -684,10 +684,6 @@ int DynamicGraph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int 
 	return 0;
 }
 
-
-
-/////////////////////////////////* GETTING DENSITY ESTIMATE *///////////////////////////////////
-
 double DynamicGraph :: getDensity()
 {
 	std::map<Count, std::set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
@@ -699,6 +695,248 @@ double DynamicGraph :: getDensity()
 double DynamicGraph :: getRhoEst()
 {
 	return rhoEst;
+}
+
+/////////////////////////////////* GETTING DENSITY ESTIMATE *///////////////////////////////////
+
+unsigned int DynamicGraph :: getPendingCount()
+{
+	return pendingListOfEdges.size();	
+}
+
+
+int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
+{
+	std::cout << "Adding pending list of edges to active copy...\n";
+	// std::unordered_map<EdgeIdx, std::vector<VertexIdx>> :: iterator pendingIt;
+	std::unordered_map<EdgeIdx, int> :: iterator pendingIt;
+
+	for(pendingIt = pendingListOfEdges.begin(); pendingIt != pendingListOfEdges.end(); ++pendingIt)
+	{
+		EdgeIdx pEId = pendingIt->first;
+		edgeVector pE = EM.edgeDupMap[pEId];
+		insertEdge(pE, pEId, EM);
+	}
+
+	pendingListOfEdges.clear();
+	pendingForNode.clear();
+	nodesWithPendingEdge.clear();
+
+	return 0;
+}
+
+Count DynamicGraph :: getMaxLabel()
+{
+	std::map<Count, std::set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
+	Count maxVal = rit->first;
+	/*
+	std::set<VertexIdx> maxValSet = rit->second;
+	std::set<VertexIdx>::iterator it = maxValSet.begin();
+	VertexIdx maxEle = *it;
+	*/
+	return maxVal;
+}
+
+
+std::pair<std::set<VertexIdx>, revItMapCountSetVertices> DynamicGraph :: returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D)
+{
+	std::set<VertexIdx> B;
+    std::map<Count, std::set<VertexIdx>>::reverse_iterator preservedRit;
+    std::map<Count, std::set<VertexIdx>>::reverse_iterator rit;
+
+	for(rit = startIt; rit != Labels.rend(); ++rit)
+	{
+		preservedRit = rit;
+		Count densityVal = rit->first;
+		if(densityVal >= D)
+		{
+			std::set<VertexIdx> dvertices = rit->second;
+			std::set<VertexIdx> :: iterator dvIt;
+			for(dvIt = dvertices.begin(); dvIt != dvertices.end(); ++dvIt)
+			{
+				B.insert(*dvIt);
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if(rit == Labels.rend())
+	{
+		preservedRit = rit;
+	}
+
+	std::pair rP = std::make_pair(B, preservedRit);
+    return rP;
+}
+
+
+std::set<VertexIdx> DynamicGraph :: getDensestSubgraph(double rgamma)
+{
+	Count decrementVal = eta;
+
+	double D = getMaxLabel();
+	std::set<VertexIdx> A, B;
+	unsigned int ASize, BSize;
+	double sizeRatio;
+
+	revItMapCountSetVertices rit;
+
+	rit = Labels.rbegin();
+	std::pair<std::set<VertexIdx>, revItMapCountSetVertices> AElementsPair = returnDensitySatisfiedNodes(rit, D);
+	A = AElementsPair.first;
+
+	if(AElementsPair.second != Labels.rend())
+	{
+		rit = AElementsPair.second;
+	}
+	else
+	{
+		std::cout << "Returning just the elements in A -- which is a set of all elements...\n";
+		return A;
+	}
+
+	// D = D-eta;
+	D = D-decrementVal;
+	B = A;
+
+	std::pair<std::set<VertexIdx>, revItMapCountSetVertices> newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
+	std::set<VertexIdx> newElementsToB = newElementsToBPair.first;
+
+	rit = newElementsToBPair.second;
+
+	std::set<VertexIdx> :: iterator bIt;	
+
+	for(bIt = newElementsToB.begin(); bIt != newElementsToB.end(); ++bIt)
+	{
+		B.insert(*bIt);
+	}
+
+	BSize = B.size();
+	ASize = A.size();
+	sizeRatio = (BSize * 1.0)/ASize;
+
+	while(sizeRatio > 1 + rgamma)
+	{
+		if(rit != Labels.rend())
+		{
+			A = B;
+			// D = D - eta;
+			D = D - decrementVal;
+			newElementsToBPair = returnDensitySatisfiedNodes(rit, D);
+			newElementsToB = newElementsToBPair.first;
+			rit = newElementsToBPair.second;
+
+			for(bIt = newElementsToB.begin(); bIt != newElementsToB.end(); ++bIt)
+			{
+				B.insert(*bIt);
+			}
+
+			BSize = B.size();
+			ASize = A.size();
+			sizeRatio = (BSize * 1.0)/ASize;
+		}
+		else
+		{
+			std::cout << "Cannot accumulate B anymore...\n";
+			return B;
+		}
+	}
+
+	return B;
+}
+
+
+std::set<VertexIdx> DynamicGraph :: querySubgraph(double D_hat)
+{
+	double rgamma = sqrt(2 * eta * log(nVertices) / rhoEst);
+	std::cout << "rGamma = " << rgamma << std::endl;
+	return getDensestSubgraph(rgamma);
+}
+
+
+double DynamicGraph :: getDensityOfInducedSubgraph(std::set<VertexIdx> denseSubgraphNodes, vectorListMap &mainEdge2Ids, Count duplicationFactor)
+{
+
+	// std::cout << "Checking density of said nodes... -- ";
+	Count i = 0;
+	std::multimap<std::vector<VertexIdx>, EdgeIdx>::iterator edgeMapIt;
+	vectorListMap::iterator mainEdge2IdsIt;
+
+	// std::vector<edgeVector> selectedEdges;
+
+	Count edgeCount = 0;
+
+	std::vector<VertexIdx> evector;
+
+	// for(edgeMapIt = edgeMap.begin(); edgeMapIt != edgeMap.end(); ++edgeMapIt)
+	for(mainEdge2IdsIt = mainEdge2Ids.begin(); mainEdge2IdsIt != mainEdge2Ids.end(); ++mainEdge2IdsIt)
+	{
+		i++;
+		evector = mainEdge2IdsIt->first;
+		// EdgeIdx eId = edgeMapIt->second;
+		int flag = 1;
+		for(unsigned int i = 0; i < evector.size(); i++)
+		{
+			VertexIdx node = evector[i];
+			if(denseSubgraphNodes.find(node) == denseSubgraphNodes.end())
+			{
+				flag = 0;
+				break;
+			}
+		}
+		Count numEdgeCopies = (mainEdge2IdsIt->second).size();
+
+		if(flag == 1)
+		{
+			// for each copy of the edge, there are duplicationFactor many copies in the graph instance...
+			// and all duplicationFactor many copies exist in the graph instance...
+			edgeCount = edgeCount + (numEdgeCopies*duplicationFactor);
+			// selectedEdges.push_back(evector);
+		}
+	}
+
+	double estDensity = (edgeCount*1.0)/denseSubgraphNodes.size();
+
+	std::cout << i << "---" << (edgeCount*1.0)/denseSubgraphNodes.size() << " " << denseSubgraphNodes.size() << std::endl;
+
+	return estDensity;
+}
+
+
+std::pair<double, unsigned int> DynamicGraph :: getMaxPartitionDensity(vectorListMap &mainEdge2Ids, Count duplicationFactor)
+{
+	double maxDensity = -1;
+	unsigned int maxSubgraphSize = 0;
+
+	std::set<VertexIdx> denseSubgraphNodes;
+
+	revItMapCountSetVertices rit;
+
+	for(rit = Labels.rbegin(); rit != Labels.rend(); ++rit)
+	{
+		std::set<VertexIdx> newElementsToSet = rit->second;
+
+		std::set<VertexIdx> :: iterator bIt;
+		for(bIt = newElementsToSet.begin(); bIt != newElementsToSet.end(); ++bIt)
+		{
+			denseSubgraphNodes.insert(*bIt);
+		}
+		
+		double currentDensity = getDensityOfInducedSubgraph(denseSubgraphNodes, mainEdge2Ids, duplicationFactor);
+		
+		if(currentDensity > maxDensity)
+		{
+			maxDensity = currentDensity;
+			maxSubgraphSize = denseSubgraphNodes.size();
+		}
+	}
+
+	std::cout << "pending list of edges size ---- " << pendingListOfEdges.size() << std::endl;
+
+	return std::make_pair(maxDensity, maxSubgraphSize);
 }
 
 

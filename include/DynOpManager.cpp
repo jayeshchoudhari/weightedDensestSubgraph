@@ -107,7 +107,7 @@ int DynOpManager :: removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eD
 
             for(int copy = active - 1; copy >= 1; --copy)
             {
-                int checkEdge = DG[copy].checkEdgeExistenceInPendingList(currentEdge, delEdgeId);
+                int checkEdge = DG[copy].checkEdgeExistenceInPendingList(delEdgeId);
 
                 if(checkEdge != 0)
                 {
@@ -121,7 +121,7 @@ int DynOpManager :: removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eD
                     EdgeIdx eId = DG[copy].getPendingEdgeForLastVertex(lastVertex);
                     if(eId != NullEdgeIdx)
                     {
-                        edgeVector e = EM.edgeDupList[eId];
+                        edgeVector e = EM.edgeDupMap[eId];
                         DG[copy].insertEdge(e, eId, EM);
                         DG[copy].removeEdgeFromPendingList(e, eId);
                     }
@@ -130,9 +130,9 @@ int DynOpManager :: removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eD
 
             // DG[0].removeEdgeFromMap(currentEdge);
 
-            endClock = std::chrono::steady_clock::now();
-            localDeleteTime = std::chrono::duration_cast<std::chrono::microseconds> (endClock - beginClock).count();
-            perReportTime += localDeleteTime;
+            // endClock = std::chrono::steady_clock::now();
+            // localDeleteTime = std::chrono::duration_cast<std::chrono::microseconds> (endClock - beginClock).count();
+            // perReportTime += localDeleteTime;
             /*
             */
         }
@@ -142,5 +142,50 @@ int DynOpManager :: removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eD
             break;
         }
     }
+    return 0;
+}
+
+
+int DynOpManager :: getDensityEstimate(EdgeManager &EM, double localAlpha, vectorListMap &mainEdge2Ids)
+{
+    Count duplicationFactor = (Count)localAlpha;
+    if(DG[active].getPendingCount() > 0)
+    {
+        // std::cout << "I am coming here.." << DG[active].getPendingCount() << "\n";
+        DG[active].insertListOfPendingEdges(EM);
+        // std::cout << "I am coming here.." << DG[active].getPendingCount() << "\n";
+    }
+
+    // Count yearLabel;
+    // ss >> yearLabel;
+
+    // std::cout << "Total Processed Edges -- " << totalProcessedEdges << "\n";
+    // std::cout << "Edge Additions = " << edgeAdditions << " Edge Deletions = " << edgeDeletions << "\n";
+
+    std::vector<double> OneMinusEpsMaxInDegVector;
+    std::vector<double> MaxInDegVector;
+    double maxInDeg, OneMinusEpsMaxInDeg;
+
+    MaxInDegVector.push_back(0);
+    OneMinusEpsMaxInDegVector.push_back(0);
+
+    for(int copy = 1; copy <= maxInstanceId; ++copy)
+    {
+        maxInDeg = (DG[copy].getMaxLabel()*1.0)/localAlpha;
+        MaxInDegVector.push_back(maxInDeg);
+        OneMinusEpsMaxInDeg = DG[copy].getDensity()/localAlpha;
+        OneMinusEpsMaxInDegVector.push_back(OneMinusEpsMaxInDeg);
+    }
+
+    maxInDeg = (DG[active].getMaxLabel()*1.0)/localAlpha;
+    OneMinusEpsMaxInDeg = DG[active].getDensity()/localAlpha;
+
+    std::set<VertexIdx> denseSubgraph = DG[active].querySubgraph(localAlpha);
+    unsigned int denseSubgraphSize = denseSubgraph.size();
+    double estimatedDensity =  DG[active].getDensityOfInducedSubgraph(denseSubgraph, mainEdge2Ids, duplicationFactor)/localAlpha;
+
+    std::cout << "Getting max partition density....\n";
+    std::pair<double, unsigned int> maxPartitionedDensity = DG[active].getMaxPartitionDensity(mainEdge2Ids, duplicationFactor);
+
     return 0;
 }

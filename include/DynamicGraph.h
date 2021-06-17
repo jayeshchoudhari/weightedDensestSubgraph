@@ -145,11 +145,11 @@ class DynamicGraph
 		Count getMaxIndegree();
 		int checkEdgeAssignment();
 
-		double getDensityOfInducedSubgraph(std::set<VertexIdx>);
-		std::pair<double, unsigned int> getMaxPartitionDensity();
+		double getDensityOfInducedSubgraph(std::set<VertexIdx> denseSubgraphNodes, vectorListMap &mainEdge2Ids, Count duplicationFactor);
+		std::pair<double, unsigned int> getMaxPartitionDensity(vectorListMap &mainEdge2Ids, Count duplicationFactor);
 
 		unsigned int getPendingCount();
-		int addListOfPendingEdges();
+		int insertListOfPendingEdges(EdgeManager &EM);
 
 		int showPQs();
 };

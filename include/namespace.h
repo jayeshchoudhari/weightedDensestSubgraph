@@ -56,6 +56,6 @@ using eTupleUnWeighted	= std::tuple<VertexIdx, VertexIdx>;
 using eTupleWeighted	= std::tuple<VertexIdx, VertexIdx, Count>;
 
 using revItMapCountSetVertices = std::map<Count, std::set<VertexIdx>>::reverse_iterator;
-
+using vectorListMap = std::unordered_map<std::vector<VertexIdx>, std::list<EdgeIdx>, vectorHash>;
 
 #endif      // NAMESPACE_H

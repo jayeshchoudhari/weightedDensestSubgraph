@@ -25,10 +25,9 @@ int main(int argc, char** argv)
 	
 	float epsUD = std::stod(argv[3]);
 	double localAlpha = round(1.0/pow(epsUD,2));
-	int duplicationFactor = (int)localAlpha;
-	// vector<vector<VertexIdx>> mainEdgePool;
+	Count duplicationFactor = (Count)localAlpha;
 
-	std::unordered_map<std::vector<VertexIdx>, std::list<EdgeIdx>, vectorHash> mainEdge2Ids;
+	vectorListMap mainEdge2Ids;
 
 	GraphLoader GL(graphFileName);
 	Count n = GL.getNumVertices();
@@ -68,12 +67,12 @@ int main(int argc, char** argv)
             }
 			else
 			{
-				///////////// DELETION /////////////////////////
+				///////////////// DELETION /////////////////////////
 				if(mainEdge2Ids.find(edge_up.vertices) != mainEdge2Ids.end())
 				{
 					std::vector<EdgeIdx> edgeDuplicatorIds = EM.retrieveDuplicatedEdgeIds(edge_up.vertices, duplicationFactor);
 					DOM.removeEdge(edge_up.vertices, edgeDuplicatorIds, EM);
-
+					EM.removeEdgeFromMemory(edgeDuplicatorIds);
 					// remove edge from the main set of edgeIds 
 					mainEdge2Ids[edge_up.vertices].pop_front();
 					if(mainEdge2Ids[edge_up.vertices].size() == 0)
@@ -87,6 +86,10 @@ int main(int argc, char** argv)
 				}
             }
         }
+		else
+		{
+			DOM.getDensityEstimate(EM, localAlpha, mainEdge2Ids);
+		}
         // assert(edge_id < std::numeric_limits<int>::max() );
 
         // double upper_bound = h.maxEdgeCardinality() * ads.beta() * (1.0 + ads.epsilon());

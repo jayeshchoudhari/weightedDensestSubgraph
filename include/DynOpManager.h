@@ -9,14 +9,15 @@
 class DynOpManager
 {
     private:
-        std::vector<DynamicGraph> DG;
         int active;
         int maxInstanceId;
+        std::vector<DynamicGraph> DG;
     public:
         DynOpManager(int maxId);
         int bindGraph(std::vector<DynamicGraph> &G);
         int addEdge(edgeVector &e, std::vector<EdgeIdx> &eDupIds, EdgeManager &EM);
         int removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eDupId, EdgeManager &EM);
+        int getDensityEstimate(EdgeManager &EM, double localAlpha, vectorListMap &mainEdge2Ids);
 };
 
 #endif // DYN_OP_MANAGER_H
