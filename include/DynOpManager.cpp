@@ -6,10 +6,12 @@
 
 // using namespace std;
 
-DynOpManager :: DynOpManager(int maxId)
+DynOpManager :: DynOpManager(int maxId, std::string file_name)
 {
     active= 0;
     maxInstanceId = maxId;
+    outFile.open(file_name.c_str(), std::ios::out);
+    outFile << "Label  MaxInDeg  OneMinusEpsMaxInDeg  MaxDensity  Size  TimePerWindow(micros)  NumOpPerWindow  TimePerOp\n";
 }
 
 int DynOpManager :: bindGraph(std::vector<DynamicGraph> &G)
@@ -21,9 +23,10 @@ int DynOpManager :: bindGraph(std::vector<DynamicGraph> &G)
 int DynOpManager :: addEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eDupId, EdgeManager &EM)
 {
     double rho, rhoEst, rhoEstActive;
+    // Duplication of edges...
     for(unsigned int dup = 0; dup < eDupId.size(); ++dup)
     {
-
+        // Affordable copies...
         for(int copy = maxInstanceId; copy >= active + 1; --copy)
         {
             DG[copy].insertEdge(currentEdge, eDupId[dup], EM);
@@ -32,7 +35,7 @@ int DynOpManager :: addEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eDupI
         if(active + 1 <= maxInstanceId)
         {
             rho = DG[active + 1].getDensity();
-            rhoEstActive = DG[active].getRhoEst();
+            rhoEstActive = DG[active].getRhoEst();      // change this -- not to call the function -- make rhoEst public...
 
             if(rho >= 2*rhoEstActive)
             {
@@ -145,26 +148,29 @@ int DynOpManager :: removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eD
     return 0;
 }
 
-
-int DynOpManager :: getDensityEstimate(EdgeManager &EM, double localAlpha, vectorListMap &mainEdge2Ids)
+int DynOpManager :: addPendingEdgesToActiveInstance(EdgeManager &EM)
 {
-    Count duplicationFactor = (Count)localAlpha;
-    if(DG[active].getPendingCount() > 0)
+    // if(DG[DOM.active].getPendingCount() > 0)
+    if(DG[active].pendingListOfEdges.size() > 0)
     {
         // std::cout << "I am coming here.." << DG[active].getPendingCount() << "\n";
         DG[active].insertListOfPendingEdges(EM);
         // std::cout << "I am coming here.." << DG[active].getPendingCount() << "\n";
     }
+    return 0;
+}
 
+int DynOpManager :: getDensityEstimate(EdgeManager &EM, double localAlpha, vectorListMap &mainEdge2Ids, double micros, Count numOpPerWindow, std::string label)
+{
     // Count yearLabel;
     // ss >> yearLabel;
 
     // std::cout << "Total Processed Edges -- " << totalProcessedEdges << "\n";
     // std::cout << "Edge Additions = " << edgeAdditions << " Edge Deletions = " << edgeDeletions << "\n";
 
+    /*
     std::vector<double> OneMinusEpsMaxInDegVector;
     std::vector<double> MaxInDegVector;
-    double maxInDeg, OneMinusEpsMaxInDeg;
 
     MaxInDegVector.push_back(0);
     OneMinusEpsMaxInDegVector.push_back(0);
@@ -176,10 +182,12 @@ int DynOpManager :: getDensityEstimate(EdgeManager &EM, double localAlpha, vecto
         OneMinusEpsMaxInDeg = DG[copy].getDensity()/localAlpha;
         OneMinusEpsMaxInDegVector.push_back(OneMinusEpsMaxInDeg);
     }
-
+    */
+    double maxInDeg, OneMinusEpsMaxInDeg;
     maxInDeg = (DG[active].getMaxLabel()*1.0)/localAlpha;
     OneMinusEpsMaxInDeg = DG[active].getDensity()/localAlpha;
 
+    Count duplicationFactor = (Count)localAlpha;
     std::set<VertexIdx> denseSubgraph = DG[active].querySubgraph(localAlpha);
     unsigned int denseSubgraphSize = denseSubgraph.size();
     double estimatedDensity =  DG[active].getDensityOfInducedSubgraph(denseSubgraph, mainEdge2Ids, duplicationFactor)/localAlpha;
@@ -187,5 +195,9 @@ int DynOpManager :: getDensityEstimate(EdgeManager &EM, double localAlpha, vecto
     std::cout << "Getting max partition density....\n";
     std::pair<double, unsigned int> maxPartitionedDensity = DG[active].getMaxPartitionDensity(mainEdge2Ids, duplicationFactor);
 
+    std::cout << maxPartitionedDensity.first << " " << maxPartitionedDensity.second << std::endl;
+
+    outFile << label << " " << maxInDeg << " " << OneMinusEpsMaxInDeg << " " << maxPartitionedDensity.first << " " << maxPartitionedDensity.second << " " << micros << " " << numOpPerWindow << " " << micros/numOpPerWindow << "\n";
+    
     return 0;
 }

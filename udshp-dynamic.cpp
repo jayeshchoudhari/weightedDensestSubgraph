@@ -44,18 +44,21 @@ int main(int argc, char** argv)
 		DGVecInstance.push_back(DynamicGraph(i, n, epsUD));
 	}
 
-	DynOpManager DOM(maxInstanceId);
+	DynOpManager DOM(maxInstanceId, outFileName);
 	DOM.bindGraph(DGVecInstance);
 
 	EdgeIdx edgeId = 0;
 	EdgeIdx edgeDupId = 0;
-
+	
+	auto startTime = std::chrono::system_clock::now();
+	Count numOpPerWindow = 0;
 	while (GL.has_next())
 	{
         EdgeUpdate edge_up = GL.next_update();
         // int edge_id = 0;
         if (!edge_up.is_report) 
 		{
+			numOpPerWindow += 1;
 			///////////// INSERTION /////////////////////////
 			// std::vector<VertexIdx> eVec = edge_up.vertices;
             if (edge_up.is_add) 
@@ -88,7 +91,14 @@ int main(int argc, char** argv)
         }
 		else
 		{
-			DOM.getDensityEstimate(EM, localAlpha, mainEdge2Ids);
+			DOM.addPendingEdgesToActiveInstance(EM);
+			auto endTime = std::chrono::system_clock::now();
+			auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
+			double micros = elapsed.count();
+			DOM.getDensityEstimate(EM, localAlpha, mainEdge2Ids, micros, numOpPerWindow, edge_up.report_label);
+			numOpPerWindow = 0;
+			auto lastTime = std::chrono::system_clock::now();
+			startTime = lastTime;
 		}
         // assert(edge_id < std::numeric_limits<int>::max() );
 

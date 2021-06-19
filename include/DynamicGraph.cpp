@@ -163,7 +163,7 @@ std::pair<VertexIdx, EdgeIdx> DynamicGraph :: getTightInNbr(VertexIdx u, EdgeMan
 			// check if this current neighbor satisfies the tight in-neighbor condition...
 			// VertexIdx edgeHeadNode = headOfEdgeId[usNextNeighborEdgeId];
 			edgeVector currentEdge = EM.edgeDupMap[usNextNeighborEdgeId];
-			VertexIdx minDegVertexInNbrE = getMinDegreeVertexInE(currentEdge);
+			VertexIdx minDegVertexInNbrE = getMinDegreeVertexInE(currentEdge);			//why isnt it enough to just check the deg of the headnode...?
 
 			Count minNodeInDeg = nodeInDeg[minDegVertexInNbrE];
 			Count newHeadNodeInDeg = nodeInDeg[u];
@@ -315,16 +315,16 @@ VertexIdx DynamicGraph :: deleteEdge(edgeVector &currentEdge, EdgeIdx eId, EdgeM
 	w = headNode;
 	ePrime = getTightOutNbr(w);
 	
-	std::map<EdgeIdx, int> flippedEdges;
+	// std::map<EdgeIdx, int> flippedEdges;
 
 	while(ePrime != NullEdgeIdx)
 	{
 		wPrime = headOfEdgeId[ePrime];	
-		flipDirectedEdge(ePrime, wPrime, w, EM); 	// flipDirctedEdge(eId, oldHeadNode, newHeadNode)
+		flipDirectedEdge(ePrime, wPrime, w, EM); 	// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
 		w = wPrime;
 		lastEId = ePrime;
 		ePrime = getTightOutNbr(w);
-		flippedEdges[ePrime] = 1;
+		// flippedEdges[ePrime] = 1;
 	}
 
 	decrementDu(w, EM);
@@ -335,15 +335,6 @@ VertexIdx DynamicGraph :: deleteEdge(edgeVector &currentEdge, EdgeIdx eId, EdgeM
 
 int DynamicGraph :: removeDirectedEdgeFromInOutNbrs(edgeVector &e, EdgeIdx eId, VertexIdx oldHeadNode)
 {
-	// e = u,v directed
-	// VertexIdx u = get<0>(e);
-	// VertexIdx v = get<1>(e);
-
-	// VertexIdx oldHeadNode = headOfEdgeId[eId];
-
-	// remove/decrement u from in-neighbors of v
-	// InNbrs[v][u] -= 1;
-
 	InNbrs[oldHeadNode].erase(eId);
 	removeEdgeFromInNbrsForVisitNext(oldHeadNode, eId);
 	// edgeVector e = EM.edgeDupMap[eId];
@@ -368,8 +359,8 @@ EdgeIdx DynamicGraph :: getTightOutNbr(VertexIdx u)
 		VertexIdx t = headOfEdgeId[maxOutE];
 		// degree of t in the view of u
 		// if the max neighbor has the degree that is very high than that of u...
-		float threshold = nodeInDeg[u] + eta/2;
-		if((InDegreeFromNodesView[u][t] >= threshold))
+		// float threshold = nodeInDeg[u] + eta/2;
+		if((InDegreeFromNodesView[u][t] >= nodeInDeg[u] + eta/2))
 		// if((nodeInDeg[t] >= nodeInDeg[u] + eta/2))
 		{
 			return maxOutE;
@@ -436,9 +427,11 @@ EdgeIdx DynamicGraph :: getMaxOutNbr(VertexIdx u)
 	if(outdegToNodeMap[u].size() >= 1)
 	{
 		std::map<Count, std::set<EdgeIdx>>::reverse_iterator rit = outdegToNodeMap[u].rbegin();
-		Count maxVal = rit->first;
-		std::set<EdgeIdx> maxValSet = rit->second;
-		std::set<EdgeIdx>::iterator it = maxValSet.begin();
+		// Count maxVal = rit->first;
+		// std::set<EdgeIdx> maxValSet = rit->second;
+		// std::set<EdgeIdx>::iterator it = maxValSet.begin();
+
+		std::set<EdgeIdx>::iterator it = rit->second.begin();
 		EdgeIdx maxEle = *it;
 
 		return maxEle;
@@ -565,13 +558,13 @@ int DynamicGraph :: updateTightInNbrIterator(VertexIdx u)
 
 int DynamicGraph :: flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexIdx newHeadNode, EdgeManager &EM)
 {
-	edgeVector currentEdge = EM.edgeDupMap[eId];
-	removeDirectedEdgeFromInOutNbrs(currentEdge, eId, oldHeadNode);
+	// edgeVector currentEdge = EM.edgeDupMap[eId];
+	removeDirectedEdgeFromInOutNbrs(EM.edgeDupMap[eId], eId, oldHeadNode);
 
 	// VertexIdx u = get<0>(e);
 	// VertexIdx v = get<1>(e);
 	// eTupleUnWeighted flippedEdge (v,u);
-	addDirectedEdgeToInOutNbrs(currentEdge, eId, newHeadNode);
+	addDirectedEdgeToInOutNbrs(EM.edgeDupMap[eId], eId, newHeadNode);
 	return 0;
 }
 
@@ -684,20 +677,32 @@ int DynamicGraph :: updateNextNeighbors(VertexIdx headNode, Count newDuVal, int 
 	return 0;
 }
 
-double DynamicGraph :: getDensity()
-{
-	std::map<Count, std::set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
-	double currMaxDensityValue = (labelsIt->first)*(1-epsVal);
-	// double currMaxDensityValue = (labelsIt->first);
-	return currMaxDensityValue;
-}
-
 double DynamicGraph :: getRhoEst()
 {
 	return rhoEst;
 }
 
+double DynamicGraph :: getDensity()
+{
+	std::map<Count, std::set<VertexIdx>>::reverse_iterator labelsIt = Labels.rbegin();
+	double currMaxDensityValue = (labelsIt->first)*(1-(epsVal/2));
+	// double currMaxDensityValue = (labelsIt->first);
+	return currMaxDensityValue;
+}
+
 /////////////////////////////////* GETTING DENSITY ESTIMATE *///////////////////////////////////
+
+Count DynamicGraph :: getMaxLabel()
+{
+	std::map<Count, std::set<VertexIdx>> :: reverse_iterator labelsIt = Labels.rbegin();
+	Count maxVal = labelsIt->first;
+	/*
+	std::set<VertexIdx> maxValSet = rit->second;
+	std::set<VertexIdx>::iterator it = maxValSet.begin();
+	VertexIdx maxEle = *it;
+	*/
+	return maxVal;
+}
 
 unsigned int DynamicGraph :: getPendingCount()
 {
@@ -725,17 +730,7 @@ int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
 	return 0;
 }
 
-Count DynamicGraph :: getMaxLabel()
-{
-	std::map<Count, std::set<VertexIdx>> :: reverse_iterator rit = Labels.rbegin();
-	Count maxVal = rit->first;
-	/*
-	std::set<VertexIdx> maxValSet = rit->second;
-	std::set<VertexIdx>::iterator it = maxValSet.begin();
-	VertexIdx maxEle = *it;
-	*/
-	return maxVal;
-}
+
 
 
 std::pair<std::set<VertexIdx>, revItMapCountSetVertices> DynamicGraph :: returnDensitySatisfiedNodes(revItMapCountSetVertices startIt, Count D)

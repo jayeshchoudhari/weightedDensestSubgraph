@@ -111,6 +111,8 @@ int GraphLoader::loadAllEdges()
                 std::cerr << "READ #: " << edge_queue_.size() + 1 << std::endl;
             }
         }
+    
+        lineno += 1;
     }
 
     // Only in C++11
