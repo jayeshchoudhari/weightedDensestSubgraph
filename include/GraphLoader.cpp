@@ -73,7 +73,7 @@ int GraphLoader::loadAllEdges()
                 next_edge.is_add = false;
                 next_edge.is_report = false;
             }
-            else if (tokens[0] == "report") 
+            else if (tokens[0] == "=")
             {
                 next_edge.is_add = false;
                 next_edge.is_report = true;

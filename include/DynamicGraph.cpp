@@ -53,36 +53,55 @@ int DynamicGraph :: insertEdge(edgeVector &currentEdge, EdgeIdx eId, EdgeManager
 	VertexIdx w, wPrime;
 	EdgeIdx ePrime, lastEId;
 
+	// if(eId == 54913)
+	// 	std::cout << "waithere...\n"; 
 	w = getMinDegreeVertexInE(currentEdge);
 	lastEId = eId;
 
+	// if(eId == 54913)
+	// 	std::cout << "Going for addDirectedEdgeToInOutNbrs...\n"; 
 	// // std::cout << nodeInDeg[w] << " headNode indegree during addition\n";
 	addDirectedEdgeToInOutNbrs(currentEdge, eId, w);
 
 	// // std::cout << InNbrs[w].size() << " headNode innbrs size during addition\n";
 
 	// // headOfEdgeId[eId] = w;
+	std::pair<VertexIdx, EdgeIdx> minNbrNodeEdgePair;
+	// if(eId == 54913)
+	// 	std::cout << "Getting tight in nbrs...\n"; 
+		// // check if this results into making some neighboring edge of w tight...
+	if(nodeInDeg[w] > 0)
+	{
+		minNbrNodeEdgePair = getTightInNbr(w, EM);
+		// // i.e. an edge with a headNode whose degree is very less as compared to that of w....
+		ePrime = minNbrNodeEdgePair.second;		// tight edge... -- head of this edge give tight In-neighbor node...
+	}
+	else
+	{
+		ePrime = -1;
+	}
 
-	// // check if this results into making some neighboring edge of w tight...
-	std::pair<VertexIdx, EdgeIdx> minNbrNodeEdgePair = getTightInNbr(w, EM);
-	ePrime = minNbrNodeEdgePair.second;		// tight edge... -- head of this edge give tight In-neighbor node...
-	// // i.e. an edge with a headNode whose degree is very less as compared to that of w....
 	while(ePrime != -1)
 	{
 		wPrime = minNbrNodeEdgePair.first;
 		// // wPrime's in-deg is very less...
 		// // so flip the edge to wPrime..?
-
+		// if(eId == 54913)
+		// 	std::cout << ePrime << " -- flipping directed edge...\n"; 
 		// // eTupleUnWeighted eFlip(wPrime, w);
 		flipDirectedEdge(ePrime, w, wPrime, EM);		// flipDirectedEdge(eId, oldHeadNode, newHeadNode)
 		// // so now wPrime is settled -- i.e. we have increased its indegree 
 		// // now we need to check if any in-neighbor of wPrime, violates the condition or has very less indegree...
 		w = wPrime;
 		lastEId = ePrime;
+		// if(eId == 54913)
+		// 	std::cout << "getting tight in nbr again\n"; 
 		minNbrNodeEdgePair = getTightInNbr(w, EM);
 		ePrime = minNbrNodeEdgePair.second;
 	}
 
+	// if(eId == 54913)
+	// 	std::cout << "Going for increment du...\n"; 
 	incrementDu(w, EM);
 
 	return 0;
@@ -138,6 +157,7 @@ std::pair<VertexIdx, EdgeIdx> DynamicGraph :: getTightInNbr(VertexIdx u, EdgeMan
 	
 	// this gives a pointer to a edgeId... 	
 	updateItInc = nextPositionIteratorTightInNbr[u];
+	Count newHeadNodeInDeg = nodeInDeg[u];
 
 	while(start < maxNumNeighborsToCheck)
 	{
@@ -166,7 +186,6 @@ std::pair<VertexIdx, EdgeIdx> DynamicGraph :: getTightInNbr(VertexIdx u, EdgeMan
 			VertexIdx minDegVertexInNbrE = getMinDegreeVertexInE(currentEdge);			//why isnt it enough to just check the deg of the headnode...?
 
 			Count minNodeInDeg = nodeInDeg[minDegVertexInNbrE];
-			Count newHeadNodeInDeg = nodeInDeg[u];
 			
 			if(minNodeInDeg <= newHeadNodeInDeg - eta/2)
 			{
@@ -284,7 +303,7 @@ Count DynamicGraph :: getMinLoadInE(EdgeIdx eId, EdgeManager &EM)
 	return minDegree;
 }
 
-
+/*
 int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
 {
 	pendingListOfEdges[eId] = 1;
@@ -297,6 +316,20 @@ int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
 
 	return 0;
 }
+*/
+int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
+{
+	pendingListOfEdges[eId] = e;
+
+	for(unsigned int i = 0; i < e.size(); i++)
+	{
+		pendingForNode[e[i]].insert(eId);
+		nodesWithPendingEdge[eId].insert(e[i]);
+	}
+
+	return 0;
+}
+
 
 /////////////////////////////////* DELETIONS */////////////////////////////////////
 
@@ -456,7 +489,8 @@ int DynamicGraph :: decrementDu(VertexIdx oldHeadNode, EdgeManager &EM)
 
 int DynamicGraph :: checkEdgeExistenceInPendingList(EdgeIdx eId)
 {
-	if(pendingListOfEdges.find(eId) != pendingListOfEdges.end() && pendingListOfEdges[eId] == 1)  
+	// if(pendingListOfEdges.find(eId) != pendingListOfEdges.end() && pendingListOfEdges[eId] == 1)  
+	if(pendingListOfEdges.find(eId) != pendingListOfEdges.end())  
 	{
 		return 1;
 	}
@@ -467,13 +501,13 @@ int DynamicGraph :: checkEdgeExistenceInPendingList(EdgeIdx eId)
 }
 
 
-// std::pair<EdgeIdx, edgeVector> Graph :: getPendingEdgeForLastVertex(VertexIdx lv)
-EdgeIdx DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
+std::pair<EdgeIdx, edgeVector> DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
+// EdgeIdx DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
 {
-	// edgeVector e = {};
+	edgeVector e = {};
 	EdgeIdx eId = NullEdgeIdx;
 
-	// std::pair<EdgeIdx, edgeVector> eIdEdgePair = std::make_pair(eId, e);
+	std::pair<EdgeIdx, edgeVector> eIdEdgePair = std::make_pair(eId, e);
 
 	std::unordered_map<VertexIdx, std::set<VertexIdx>> :: iterator pit = pendingForNode.find(lv);
 
@@ -482,12 +516,12 @@ EdgeIdx DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
 		std::set<EdgeIdx> edgeSet = pit->second;
 		std::set<EdgeIdx> :: iterator setIt = edgeSet.begin();
 		eId = *setIt;
-		// e = pendingListOfEdges[eId];
-		// eIdEdgePair = std::make_pair(eId, e);
+		e = pendingListOfEdges[eId];
+		eIdEdgePair = std::make_pair(eId, e);
 	}
 
-	// return eIdEdgePair;
-	return eId;
+	return eIdEdgePair;
+	// return eId;
 }
 
 
@@ -496,7 +530,12 @@ int DynamicGraph :: removeEdgeFromPendingList(edgeVector &e, EdgeIdx eId)
 	for(unsigned int i = 0; i < e.size(); i++)
 	{
 		pendingForNode[e[i]].erase(eId);
+		if(pendingForNode[e[i]].size() == 0)
+			pendingForNode.erase(e[i]);
+
 		nodesWithPendingEdge[eId].erase(e[i]);
+		if(nodesWithPendingEdge[eId].size() == 0)
+			nodesWithPendingEdge.erase(eId);
 	}
 
 	pendingListOfEdges.erase(eId);
@@ -709,7 +748,7 @@ unsigned int DynamicGraph :: getPendingCount()
 	return pendingListOfEdges.size();	
 }
 
-
+/*
 int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
 {
 	std::cout << "Adding pending list of edges to active copy...\n";
@@ -720,6 +759,27 @@ int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
 	{
 		EdgeIdx pEId = pendingIt->first;
 		edgeVector pE = EM.edgeDupMap[pEId];
+		insertEdge(pE, pEId, EM);
+	}
+
+	pendingListOfEdges.clear();
+	pendingForNode.clear();
+	nodesWithPendingEdge.clear();
+
+	return 0;
+}
+*/
+int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
+{
+
+	// std::cout << "Adding pending list of edges to active copy...\n";
+	std::unordered_map<EdgeIdx, std::vector<VertexIdx>> :: iterator pendingIt;
+
+	for(pendingIt = pendingListOfEdges.begin(); pendingIt != pendingListOfEdges.end(); ++pendingIt)
+	{
+		EdgeIdx pEId = pendingIt->first;
+		edgeVector pE = pendingIt->second;
+
 		insertEdge(pE, pEId, EM);
 	}
 

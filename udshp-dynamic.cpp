@@ -63,6 +63,7 @@ int main(int argc, char** argv)
 			// std::vector<VertexIdx> eVec = edge_up.vertices;
             if (edge_up.is_add) 
 			{
+				// std::cout << "insertion -- " << edgeId << "\n";
 				mainEdge2Ids[edge_up.vertices].push_back(edgeId);
 				std::vector<EdgeIdx> edgeDuplicatorIds = EM.getEdgeIdsAfterDuplication(edge_up.vertices, duplicationFactor);
                 DOM.addEdge(edge_up.vertices, edgeDuplicatorIds, EM);
@@ -73,9 +74,16 @@ int main(int argc, char** argv)
 				///////////////// DELETION /////////////////////////
 				if(mainEdge2Ids.find(edge_up.vertices) != mainEdge2Ids.end())
 				{
+					// std::cout << "Deletion --- " << std::endl;
 					std::vector<EdgeIdx> edgeDuplicatorIds = EM.retrieveDuplicatedEdgeIds(edge_up.vertices, duplicationFactor);
+					// std::cout << "Got the edge Ids --- " << std::endl;
+					// for(int i = 0; i < edge_up.vertices.size(); i++)
+					// 	std::cout << edge_up.vertices[i] << " ";
+					// std::cout << "\n";
 					DOM.removeEdge(edge_up.vertices, edgeDuplicatorIds, EM);
-					EM.removeEdgeFromMemory(edgeDuplicatorIds);
+					// std::cout << "Edge Deleted --- " << std::endl;
+					// EM.removeEdgeFromMemory(edgeDuplicatorIds);
+					// std::cout << "Edges Removed from memory --- " << std::endl;
 					// remove edge from the main set of edgeIds 
 					mainEdge2Ids[edge_up.vertices].pop_front();
 					if(mainEdge2Ids[edge_up.vertices].size() == 0)
@@ -91,6 +99,7 @@ int main(int argc, char** argv)
         }
 		else
 		{
+			std::cout << "Reporting...\n";
 			DOM.addPendingEdgesToActiveInstance(EM);
 			auto endTime = std::chrono::system_clock::now();
 			auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
@@ -99,6 +108,7 @@ int main(int argc, char** argv)
 			numOpPerWindow = 0;
 			auto lastTime = std::chrono::system_clock::now();
 			startTime = lastTime;
+			std::cout << "Done with first report..\n"; 
 		}
         // assert(edge_id < std::numeric_limits<int>::max() );
 
