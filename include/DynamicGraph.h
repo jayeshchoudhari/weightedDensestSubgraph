@@ -63,8 +63,8 @@ class DynamicGraph
         // **********************************************************************
 
     public:
-		std::unordered_map<EdgeIdx, std::vector<VertexIdx>> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
-		// std::unordered_map<EdgeIdx, int> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+		// std::unordered_map<EdgeIdx, std::vector<VertexIdx>> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+		std::unordered_map<EdgeIdx, int> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
 		DynamicGraph(int i, Count nv, float epsUD);
 		
     	// static int initializeStaticMembers(Count nv, double decEps);
@@ -81,8 +81,8 @@ class DynamicGraph
     	int addEdgeToPendingList(edgeVector &e, EdgeIdx eId);
     	int checkEdgeExistenceInPendingList(EdgeIdx eId);
 		int removeEdgeFromPendingList(edgeVector &e, EdgeIdx eId);
-		std::pair<EdgeIdx, edgeVector> getPendingEdgeForLastVertex(VertexIdx lv);
-		// EdgeIdx getPendingEdgeForLastVertex(VertexIdx lv);
+		// std::pair<EdgeIdx, edgeVector> getPendingEdgeForLastVertex(VertexIdx lv);
+		EdgeIdx getPendingEdgeForLastVertex(VertexIdx lv);
 
 		// Graph(int nv, int ne);		//gets number of vertices and edges... edges might change -- but this is just about the file... 
 

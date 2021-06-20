@@ -105,10 +105,10 @@ int main(int argc, char** argv)
 			auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
 			double micros = elapsed.count();
 			DOM.getDensityEstimate(EM, localAlpha, mainEdge2Ids, micros, numOpPerWindow, edge_up.report_label);
-			numOpPerWindow = 0;
 			auto lastTime = std::chrono::system_clock::now();
+			std::cout << "Done with first report.. TIME -- " << micros/numOpPerWindow << "\n"; 
+			numOpPerWindow = 0;
 			startTime = lastTime;
-			std::cout << "Done with first report..\n"; 
 		}
         // assert(edge_id < std::numeric_limits<int>::max() );
 

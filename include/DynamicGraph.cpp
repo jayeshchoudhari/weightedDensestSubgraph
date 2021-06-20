@@ -303,7 +303,6 @@ Count DynamicGraph :: getMinLoadInE(EdgeIdx eId, EdgeManager &EM)
 	return minDegree;
 }
 
-/*
 int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
 {
 	pendingListOfEdges[eId] = 1;
@@ -316,7 +315,8 @@ int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
 
 	return 0;
 }
-*/
+
+/*
 int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
 {
 	pendingListOfEdges[eId] = e;
@@ -329,7 +329,7 @@ int DynamicGraph :: addEdgeToPendingList(edgeVector &e, EdgeIdx eId)
 
 	return 0;
 }
-
+*/
 
 /////////////////////////////////* DELETIONS */////////////////////////////////////
 
@@ -489,8 +489,8 @@ int DynamicGraph :: decrementDu(VertexIdx oldHeadNode, EdgeManager &EM)
 
 int DynamicGraph :: checkEdgeExistenceInPendingList(EdgeIdx eId)
 {
-	// if(pendingListOfEdges.find(eId) != pendingListOfEdges.end() && pendingListOfEdges[eId] == 1)  
-	if(pendingListOfEdges.find(eId) != pendingListOfEdges.end())  
+	if(pendingListOfEdges.find(eId) != pendingListOfEdges.end() && pendingListOfEdges[eId] == 1)  
+	// if(pendingListOfEdges.find(eId) != pendingListOfEdges.end()) 
 	{
 		return 1;
 	}
@@ -501,27 +501,27 @@ int DynamicGraph :: checkEdgeExistenceInPendingList(EdgeIdx eId)
 }
 
 
-std::pair<EdgeIdx, edgeVector> DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
-// EdgeIdx DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
+// std::pair<EdgeIdx, edgeVector> DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
+EdgeIdx DynamicGraph :: getPendingEdgeForLastVertex(VertexIdx lv)
 {
-	edgeVector e = {};
+	// edgeVector e = {};
 	EdgeIdx eId = NullEdgeIdx;
 
-	std::pair<EdgeIdx, edgeVector> eIdEdgePair = std::make_pair(eId, e);
+	// std::pair<EdgeIdx, edgeVector> eIdEdgePair = std::make_pair(eId, e);
 
-	std::unordered_map<VertexIdx, std::set<VertexIdx>> :: iterator pit = pendingForNode.find(lv);
+	std::unordered_map<VertexIdx, std::set<EdgeIdx>> :: iterator pit = pendingForNode.find(lv);
 
 	if(pit != pendingForNode.end())
 	{
-		std::set<EdgeIdx> edgeSet = pit->second;
-		std::set<EdgeIdx> :: iterator setIt = edgeSet.begin();
+		// std::set<EdgeIdx> edgeSet = pit->second;
+		std::set<EdgeIdx> :: iterator setIt = pit->second.begin();
 		eId = *setIt;
-		e = pendingListOfEdges[eId];
-		eIdEdgePair = std::make_pair(eId, e);
+		// e = pendingListOfEdges[eId];
+		// eIdEdgePair = std::make_pair(eId, e);
 	}
 
-	return eIdEdgePair;
-	// return eId;
+	// return eIdEdgePair;
+	return eId;
 }
 
 
@@ -748,7 +748,7 @@ unsigned int DynamicGraph :: getPendingCount()
 	return pendingListOfEdges.size();	
 }
 
-/*
+
 int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
 {
 	std::cout << "Adding pending list of edges to active copy...\n";
@@ -768,7 +768,8 @@ int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
 
 	return 0;
 }
-*/
+
+/*
 int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
 {
 
@@ -789,7 +790,7 @@ int DynamicGraph :: insertListOfPendingEdges(EdgeManager &EM)
 
 	return 0;
 }
-
+*/
 
 
 

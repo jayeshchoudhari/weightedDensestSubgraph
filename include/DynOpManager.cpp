@@ -125,24 +125,24 @@ int DynOpManager :: removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eD
                     VertexIdx lastVertex = DG[copy].deleteEdge(currentEdge, delEdgeId, EM);
                     // std::pair<EdgeIdx, edgeVector> eIdEdgePair = DG[copy].getPendingEdgeForLastVertex(lastVertex);
                     
-                    /*
-                    std::cout << "Getting Pending edges of the last vertex--- \n";
+                    
+                    // std::cout << "Getting Pending edges of the last vertex--- \n";
                     EdgeIdx eId = DG[copy].getPendingEdgeForLastVertex(lastVertex);
                     if(eId != NullEdgeIdx)
                     {
                         edgeVector e = EM.edgeDupMap[eId];
-                        std::cout << "Adding edge to the instance --- \n";
+                        // std::cout << "Adding edge to the instance --- \n";
 
-                        for(int i = 0; i < e.size(); i++)
-                            std::cout << e[i] << " ";
-                        std::cout << "\n";
+                        // for(int i = 0; i < e.size(); i++)
+                        //     std::cout << e[i] << " ";
+                        // std::cout << "\n";
                         
                         DG[copy].insertEdge(e, eId, EM);
-                        std::cout << "Removing from pending list.. --- \n";
+                        // std::cout << "Removing from pending list.. --- \n";
                         DG[copy].removeEdgeFromPendingList(e, eId);
                     }
-                    */
-                    // std::cout << "Getting Pending edges of the last vertex--- \n";
+                    
+                   /*
                     std::pair<EdgeIdx, edgeVector> eIdEdgePair = DG[copy].getPendingEdgeForLastVertex(lastVertex);
 
                     if(eIdEdgePair.first != NullEdgeIdx)
@@ -155,6 +155,7 @@ int DynOpManager :: removeEdge(edgeVector &currentEdge, std::vector<EdgeIdx> &eD
                         // std::cout << "Removing from pending list.. --- \n";
                         DG[copy].removeEdgeFromPendingList(eIdEdgePair.second, eIdEdgePair.first);
                     }
+                    */
 
                 }
             }
@@ -223,9 +224,9 @@ int DynOpManager :: getDensityEstimate(EdgeManager &EM, double localAlpha, vecto
     std::cout << "Getting max partition density....\n";
     std::pair<double, unsigned int> maxPartitionedDensity = DG[active].getMaxPartitionDensity(mainEdge2Ids, duplicationFactor);
 
-    std::cout << "Reporting Density... - " << maxPartitionedDensity.first << " " << maxPartitionedDensity.second << std::endl;
+    std::cout << label << " -- Reporting Density... - " << (maxPartitionedDensity.first)/duplicationFactor << " " << maxPartitionedDensity.second << std::endl;
 
-    outFile << label << " " << maxInDeg << " " << OneMinusEpsMaxInDeg << " " << maxPartitionedDensity.first << " " << maxPartitionedDensity.second << " " << micros << " " << numOpPerWindow << " " << micros/numOpPerWindow << "\n";
+    outFile << label << " " << std::setw(10) << maxInDeg << " " << std::setw(10) << OneMinusEpsMaxInDeg << " " << std::setw(10) << (maxPartitionedDensity.first)/duplicationFactor << " " << maxPartitionedDensity.second << " " << std::setw(10) << micros << " " << numOpPerWindow << " " << std::setw(10) << micros/numOpPerWindow << "\n";
     
     return 0;
 }
