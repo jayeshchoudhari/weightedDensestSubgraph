@@ -46,12 +46,14 @@ int main(int argc, char** argv)
 
 	DynOpManager DOM(maxInstanceId, outFileName);
 	DOM.bindGraph(DGVecInstance);
+	std::cout<<"Done binding...\n";
 
 	EdgeIdx edgeId = 0;
 	EdgeIdx edgeDupId = 0;
 	
 	auto startTime = std::chrono::system_clock::now();
 	Count numOpPerWindow = 0;
+	std::cout << "Going for insertion...\n";
 	while (GL.has_next())
 	{
         EdgeUpdate edge_up = GL.next_update();

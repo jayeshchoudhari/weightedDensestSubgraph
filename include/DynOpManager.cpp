@@ -13,11 +13,13 @@ DynOpManager :: DynOpManager(int maxId, std::string file_name)
     outFile.open(file_name.c_str(), std::ios::out);
     outFile << "Label  MaxInDeg  OneMinusEpsMaxInDeg  MaxDensity  Size  TimePerWindow(micros)  NumOpPerWindow  TimePerOp\n";
     outFile.flush();
+    std::cout << "Initialized DOM..\n";
 }
 
 int DynOpManager :: bindGraph(std::vector<DynamicGraph> &G)
 {
     DG = G;
+    std::cout << "inside binding -- done binding....\n";
     return 0;
 }
 

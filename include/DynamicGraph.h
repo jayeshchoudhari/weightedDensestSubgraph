@@ -24,7 +24,8 @@ class DynamicGraph
         // each instance for a guess of density...
 	
         // std::unordered_map<EdgeIdx, int> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
-        std::unordered_map<VertexIdx, std::set<EdgeIdx>> pendingForNode;
+        // std::unordered_map<VertexIdx, std::set<EdgeIdx>> pendingForNode;
+        std::vector<std::set<EdgeIdx>> pendingForNode;
         std::unordered_map<EdgeIdx, std::set<VertexIdx>> nodesWithPendingEdge;
 
  		
