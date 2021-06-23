@@ -17,7 +17,7 @@ class DynamicGraph
  		double rhoEst;									// estimated density
 
 
-        static std::multimap<std::vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
+        // static std::multimap<std::vector<VertexIdx>, EdgeIdx> edgeMap;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
         static std::vector <std::vector<VertexIdx>> edgeList;
 
         // above could be static members shared among all the instances of the Graph...
@@ -31,7 +31,8 @@ class DynamicGraph
 
         std::unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
 
-        std::map <VertexIdx, Count> nodeInDeg;
+        // std::map <VertexIdx, Count> nodeInDeg;
+        std::vector<Count> nodeInDeg;
 
         std::vector <std::set<EdgeIdx>> InNbrs;							//List of InNbrs
 

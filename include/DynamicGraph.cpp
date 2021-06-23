@@ -25,6 +25,9 @@ DynamicGraph :: DynamicGraph(int i, Count nv, float epsUD)
     // // Maintain list of InNbrs...
     InNbrs.resize(nv);
 
+	// // Maintaining in degrees of nodes...
+	nodeInDeg.resize(nv);
+
     // // ********* TO MAINTAIN A UPDATING PRIORITY QUEUE OF OUTNEIGHBORS *************** 
     // // this is to be done for each node.. and thus a vector here...
     // // Each element of a vector is a map --  where the map is with a key Count, and value is a set of 
@@ -33,7 +36,6 @@ DynamicGraph :: DynamicGraph(int i, Count nv, float epsUD)
 	outdegToNodeMap.resize(nv);
 	nodeToOutdegMap.resize(nv);
 	InDegreeFromNodesView.resize(nv);
-
 
     // // to maintain visitNext structure... 
 	listOfNeighbors.resize(nv);
