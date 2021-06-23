@@ -10,6 +10,7 @@ class GraphLoader
     private:
         Count add_count;
         Count remove_count;
+        Count loadAddCount, loadRemoveCount;
         unsigned int position_queue_;
         std::ifstream file_stream_;
         std::vector<EdgeUpdate> edge_queue_;
@@ -29,6 +30,16 @@ class GraphLoader
             return numVertices;
         }
         
+        Count getNumOfEdgeAdditionsToBePerformed()
+        {
+            return loadAddCount;
+        }
+
+        Count getNumOfEdgeDeletionsToBePerformed()
+        {
+            return loadRemoveCount;
+        }
+
         int getMaxEdgeRank()
         {
             return maxRank;

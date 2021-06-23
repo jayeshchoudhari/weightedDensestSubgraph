@@ -31,6 +31,8 @@ int main(int argc, char** argv)
 
 	GraphLoader GL(graphFileName);
 	Count n = GL.getNumVertices();
+	Count numEdgesToBeAdded = GL.getNumOfEdgeAdditionsToBePerformed();
+	Count numEdgesToBeRemoved = GL.getNumOfEdgeDeletionsToBePerformed();
 
 	int logn = (int)log2(n);
 	int numInstances = logn + 1;
@@ -41,7 +43,7 @@ int main(int argc, char** argv)
 	// DynamicGraph DG[numInstances];
 	for(int i = 0; i <= maxInstanceId; ++i)
 	{
-		DGVecInstance.push_back(DynamicGraph(i, n, epsUD));
+		DGVecInstance.push_back(DynamicGraph(i, n, epsUD, numEdgesToBeAdded, duplicationFactor));
 	}
 
 	DynOpManager DOM(maxInstanceId, outFileName);
@@ -53,7 +55,7 @@ int main(int argc, char** argv)
 	
 	auto startTime = std::chrono::system_clock::now();
 	Count numOpPerWindow = 0;
-	std::cout << "Going for insertion...\n";
+	std::cout << "Going for operations.....\n";
 	while (GL.has_next())
 	{
         EdgeUpdate edge_up = GL.next_update();

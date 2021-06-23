@@ -5,7 +5,7 @@
 
 using namespace std;
 
-DynamicGraph :: DynamicGraph(int i, Count nv, float epsUD)
+DynamicGraph :: DynamicGraph(int i, Count nv, float epsUD, Count numAdditions, Count duplicationFactor)
 {
     nVertices = nv;
 	epsVal = epsUD;
@@ -47,7 +47,12 @@ DynamicGraph :: DynamicGraph(int i, Count nv, float epsUD)
 	nextPositionIteratorInc.resize(nv);
 	nextPositionIteratorDec.resize(nv);
 	nextPositionIteratorTightInNbr.resize(nv);
-	// std::cout << "done initializatiopn...\n";
+	
+	Count edgeBasedDS = numAdditions * duplicationFactor;
+	std::cout << "resizing headOfEdgeId... -- " << numAdditions << " " << duplicationFactor << " " << edgeBasedDS <<"\n";
+	headOfEdgeId.resize(edgeBasedDS);
+	std::cout << "done initializatiopn...\n";
+
 }
 
 /////////////////////////////////* INSERTIONS */////////////////////////////////////
@@ -290,10 +295,11 @@ int DynamicGraph :: incrementDu(VertexIdx headNode, EdgeManager &EM)
 	// Count oldVal = nodeInDeg[headNode];
 	nodeInDeg[headNode] += 1;
 
-	Count newDuVal = nodeInDeg[headNode];
+	// Count newDuVal = nodeInDeg[headNode];
 
 	// update 4 din(headNode)/eta next in-neigbors of u about the change in the in-degree of u 
-	updateNextNeighbors(headNode, newDuVal, 1, EM);
+	// updateNextNeighbors(headNode, newDuVal, 1, EM);
+	updateNextNeighbors(headNode, nodeInDeg[headNode], 1, EM);
 
 	return 0;
 }
@@ -644,16 +650,16 @@ int DynamicGraph :: flipDirectedEdge(EdgeIdx eId, VertexIdx oldHeadNode, VertexI
 int DynamicGraph :: updateLabels(VertexIdx u, Count changeVal)
 {
 	Count oldVal = nodeInDeg[u];
-	Count newVal = nodeInDeg[u] + changeVal;
+	// Count newVal = oldVal + changeVal;
 	// updating the Labels data-structure...
 	Labels[oldVal].erase(u);
 	// nodeInDeg[u] +=  changeVal;
 	if(Labels[oldVal].size() == 0)
 	{
-		Labels.erase(oldVal);	
+		Labels.erase(oldVal);
 	}
-	Labels[newVal].insert(u);
-	ReverseLabels[u] = newVal;
+	Labels[oldVal + changeVal].insert(u);
+	// ReverseLabels[u] = newVal;
 
 	return 0;
 }

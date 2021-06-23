@@ -14,6 +14,8 @@ GraphLoader::GraphLoader(const std::string& file_name)
 	if (file_stream_.is_open())
     {
 	    std::cout<< "open file" <<std::endl;
+        loadAddCount = 0;
+        loadRemoveCount = 0;
         loadAllEdges();
         position_queue_ = 0;
         add_count = 0;
@@ -67,11 +69,13 @@ int GraphLoader::loadAllEdges()
             {
                 next_edge.is_add = true;
                 next_edge.is_report = false;
+                loadAddCount += 1;
             } 
             else if (tokens[0][0] == '-') 
             {
                 next_edge.is_add = false;
                 next_edge.is_report = false;
+                loadRemoveCount -= 1;
             }
             else if (tokens[0] == "=")
             {

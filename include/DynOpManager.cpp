@@ -18,6 +18,7 @@ DynOpManager :: DynOpManager(int maxId, std::string file_name)
 
 int DynOpManager :: bindGraph(std::vector<DynamicGraph> &G)
 {
+    std::cout << "starting to bind....\n";
     DG = G;
     std::cout << "inside binding -- done binding....\n";
     return 0;

@@ -28,9 +28,8 @@ class DynamicGraph
         std::vector<std::set<EdgeIdx>> pendingForNode;
         std::unordered_map<EdgeIdx, std::set<VertexIdx>> nodesWithPendingEdge;
 
- 		
-
-        std::unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
+        // std::unordered_map<EdgeIdx, VertexIdx> headOfEdgeId;
+        std::vector<VertexIdx> headOfEdgeId;
 
         // std::map <VertexIdx, Count> nodeInDeg;
         std::vector<Count> nodeInDeg;
@@ -61,13 +60,13 @@ class DynamicGraph
 
         // ********** TO MAINTAIN LABELS/NODES WITH HIGH INDEGREE *************** 
         std::map<Count, std::set<VertexIdx>> Labels;				// this is the data-structure that keeps track of top elements...
-        std::map<VertexIdx, Count> ReverseLabels;			// this is the data-structure that keeps track of top elements...
+        // std::map<VertexIdx, Count> ReverseLabels;			// this is the data-structure that keeps track of top elements...
         // **********************************************************************
 
     public:
 		// std::unordered_map<EdgeIdx, std::vector<VertexIdx>> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
 		std::unordered_map<EdgeIdx, int> pendingListOfEdges;	// Map of edges -- to check mostly if the edge already exists or not...and to keep an Id for each edge...
-		DynamicGraph(int i, Count nv, float epsUD);
+		DynamicGraph(int i, Count nv, float epsUD, Count numAdditions, Count duplicationFactor);
 		
     	// static int initializeStaticMembers(Count nv, double decEps);
     	int initializeVariables(int i, Count nv, float epsVal);
